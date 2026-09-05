@@ -1,0 +1,6 @@
+{
+  "name": "Warden",
+  "description": "Windows Telemetry & Syslog Platform",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
