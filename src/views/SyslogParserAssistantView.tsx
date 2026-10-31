@@ -10,7 +10,6 @@ import {
   FileCode,
   Save,
 } from 'lucide-react';
-import { syslogService } from '../services/syslogService';
 import { NavigationSection } from '../types';
 
 interface SyslogParserAssistantViewProps {
@@ -21,9 +20,6 @@ export const SyslogParserAssistantView: React.FC<SyslogParserAssistantViewProps>
   const [rawSample, setRawSample] = useState(
     '<134>1 2026-09-02T10:48:58Z APP-LOG-01 sshd 14820 - - Accepted publickey for ansible from 10.10.0.5 port 49120 ssh2: RSA SHA256:4f8a...9e'
   );
-  const [parsing, setParsing] = useState(false);
-  const [parseResult, setParseResult] = useState<any>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const samplePresets = [
     {
@@ -43,18 +39,6 @@ export const SyslogParserAssistantView: React.FC<SyslogParserAssistantViewProps>
     },
   ];
 
-  const handleTestParser = async () => {
-    setParsing(true);
-    const res = await syslogService.testParser(rawSample);
-    setParseResult(res);
-    setParsing(false);
-  };
-
-  const handleSave = () => {
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-  };
-
   return (
     <div className="space-y-4 font-sans text-xs">
       {/* Header */}
@@ -69,33 +53,30 @@ export const SyslogParserAssistantView: React.FC<SyslogParserAssistantViewProps>
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-mono text-base font-bold text-slate-100">Syslog Parser Assistant</h1>
+              <h1 className="font-mono text-base font-bold text-slate-100">Syslog Sample Input</h1>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-bold">
-                ECS SCHEMA NORMALIZER
+                PARSING UNAVAILABLE
               </span>
             </div>
             <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-              Interactive test bench to analyze raw unstructured syslog messages and generate regex/Grok field extractors
+              Example inputs only. This console does not parse syslog or validate collector parser behavior.
             </p>
           </div>
         </div>
 
         <button
-          onClick={handleSave}
-          disabled={!parseResult}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm disabled:opacity-50"
+          disabled
+          aria-describedby="syslog-parser-unavailable"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-mono text-xs font-semibold cursor-not-allowed"
         >
           <Save size={13} />
           <span>Save Parser Definition</span>
         </button>
       </div>
 
-      {saveSuccess && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-700 text-emerald-300 font-mono text-xs flex items-center gap-2">
-          <CheckCircle2 size={16} className="shrink-0" />
-          <span>Parser definition compiled and assigned to syslog normalization pipeline.</span>
-        </div>
-      )}
+      <p id="syslog-parser-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Parser testing, extraction, confidence scoring, and parser deployment are unavailable. No submitted message is parsed or assigned to a pipeline.
+      </p>
 
       {/* Preset Selector */}
       <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
@@ -105,7 +86,6 @@ export const SyslogParserAssistantView: React.FC<SyslogParserAssistantViewProps>
             key={p.name}
             onClick={() => {
               setRawSample(p.sample);
-              setParseResult(null);
             }}
             className="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 cursor-pointer transition-colors"
           >
@@ -121,65 +101,25 @@ export const SyslogParserAssistantView: React.FC<SyslogParserAssistantViewProps>
             Raw Syslog Message Sample
           </label>
           <button
-            onClick={handleTestParser}
-            disabled={parsing || !rawSample.trim()}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer transition-colors"
+            disabled
+            aria-describedby="syslog-parser-unavailable"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-xs font-semibold cursor-not-allowed"
           >
-            <Play size={12} className={parsing ? 'animate-spin' : ''} />
-            <span>{parsing ? 'Parsing...' : 'Test & Extract Fields'}</span>
+            <Play size={12} />
+            <span>Test &amp; Extract Fields</span>
           </button>
         </div>
 
         <textarea
           rows={3}
+          aria-label="Sample syslog message"
+          maxLength={65536}
           value={rawSample}
           onChange={(e) => setRawSample(e.target.value)}
           className="w-full p-3 rounded bg-slate-950 border border-slate-700 text-slate-200 text-xs focus:border-cyan-500 focus:outline-none select-all"
         />
       </div>
 
-      {/* Output Results */}
-      {parseResult && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 font-mono">
-          {/* Extracted Fields */}
-          <div className="rounded-lg bg-[#0f151e] border border-slate-800 p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                Extracted Raw Token Fields
-              </h3>
-              <span className="text-[10px] text-cyan-400">{parseResult.confidence}% confidence</span>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              {Object.entries(parseResult.extractedFields).map(([k, v]) => (
-                <div key={k} className="p-2 rounded bg-[#0b1017] border border-slate-800 flex justify-between">
-                  <span className="text-slate-400 text-[11px]">{k}:</span>
-                  <span className="text-slate-100 font-bold">{String(v)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Normalized Elastic Common Schema (ECS) Mappings */}
-          <div className="rounded-lg bg-[#0f151e] border border-slate-800 p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                Normalized ECS Schema Target
-              </h3>
-              <span className="text-[10px] text-emerald-400">{parseResult.recommendedParser}</span>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              {Object.entries(parseResult.normalizedMapping).map(([ecsField, rawField]) => (
-                <div key={ecsField} className="p-2 rounded bg-[#0b1017] border border-slate-800 flex justify-between">
-                  <span className="text-cyan-300 font-bold">{ecsField}</span>
-                  <span className="text-slate-400">&larr; ${String(rawField)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

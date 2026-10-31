@@ -582,7 +582,7 @@ export interface SyslogListener {
   id: string;
   protocol: 'UDP' | 'TCP' | 'TCP TLS';
   port: number;
-  status: 'Active' | 'Listening' | 'Warning' | 'Disabled';
+  status: 'Active' | 'Listening' | 'Warning' | 'Disabled' | 'Unavailable';
   messagesPerSec: number;
   connectedSources: number;
   tlsCertExpiry?: string;
