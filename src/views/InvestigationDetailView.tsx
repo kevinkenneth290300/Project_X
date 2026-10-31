@@ -36,7 +36,7 @@ interface InvestigationDetailViewProps {
 }
 
 export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = ({
-  investigationId = 'INV-000142',
+  investigationId,
   onNavigate,
   onSelectEvent,
   onSelectAgent,
@@ -44,68 +44,89 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'graph' | 'evidence' | 'notes'>('timeline');
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setInvestigation(null);
+    setEvidenceList([]);
+    setLoadError(null);
+    setActionError(null);
+    setNewNoteText('');
     const fetchInv = async () => {
-      setLoading(true);
-      const data = await investigationService.getInvestigationById(investigationId || 'INV-000142');
-      const currentInv = data || (await investigationService.getInvestigationById('INV-000142'));
-      setInvestigation(currentInv);
-      if (currentInv) {
-        const evs = await evidenceService.getEvidenceForInvestigation(currentInv.evidenceIds);
-        setEvidenceList(evs);
+      try {
+        const currentCase = await investigationService.getInvestigationById(investigationId);
+        const items = currentCase ? await evidenceService.getEvidenceForInvestigation(currentCase.evidenceIds) : [];
+        if (active) {
+          setInvestigation(currentCase);
+          setEvidenceList(items);
+        }
+      } catch {
+        if (active) setLoadError('Unable to load the requested investigation.');
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     };
     fetchInv();
+    return () => { active = false; };
   }, [investigationId]);
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!investigation || !newNoteText.trim()) return;
     setIsAddingNote(true);
-    const createdNote = await investigationService.addNote(
-      investigation.id,
-      'Alex Vance',
-      'SOC Senior Analyst',
-      newNoteText
-    );
-    setInvestigation({
-      ...investigation,
-      notes: [createdNote, ...investigation.notes],
-    });
-    setNewNoteText('');
-    setIsAddingNote(false);
+    setActionError(null);
+    const targetCaseId = investigation.id;
+    try {
+      const createdNote = await investigationService.addNote(targetCaseId, 'Sample analyst', 'Demo', newNoteText);
+      setInvestigation((currentCase) => currentCase?.id === targetCaseId
+        ? { ...currentCase, notes: [createdNote, ...currentCase.notes] }
+        : currentCase);
+      setNewNoteText('');
+    } catch {
+      setActionError('Unable to save the local case note.');
+    } finally {
+      setIsAddingNote(false);
+    }
   };
 
   const handleStatusChange = async (newStatus: any) => {
     if (!investigation) return;
-    const updated = await investigationService.updateStatus(investigation.id, newStatus);
-    if (updated) setInvestigation(updated);
-    setStatusMenuOpen(false);
+    const targetCaseId = investigation.id;
+    setActionError(null);
+    try {
+      const updated = await investigationService.updateStatus(targetCaseId, newStatus);
+      if (updated) setInvestigation((currentCase) => currentCase?.id === targetCaseId ? updated : currentCase);
+    } catch {
+      setActionError('Unable to update the local case status.');
+    } finally {
+      setStatusMenuOpen(false);
+    }
   };
 
   const handleOpenEvidence = (evidenceId: string) => {
-    // Map evidence ID to associated event
-    if (evidenceId === 'EVID-001') onSelectEvent('evt-4624-rdp');
-    else if (evidenceId === 'EVID-002') onSelectEvent('evt-4672-priv');
-    else if (evidenceId === 'EVID-003') onSelectEvent('evt-4688-proc');
-    else if (evidenceId === 'EVID-004') onSelectEvent('evt-7045-svc');
-    else if (evidenceId === 'EVID-005') onSelectEvent('evt-5007-def');
-    else onSelectEvent('evt-7045-svc');
+    const item = evidenceList.find((candidate) => candidate.id === evidenceId);
+    if (!item?.eventRecordId) return;
+    onSelectEvent(item.eventRecordId);
     onNavigate('event-detail');
   };
 
-  if (loading || !investigation) {
+  if (loading) {
     return (
       <div className="p-8 text-center font-mono text-slate-400">
         Loading investigation dossier and telemetry graph...
       </div>
     );
+  }
+
+  if (!investigation) {
+    return <div role="alert" className="p-8 font-mono text-amber-300">{loadError || 'Investigation not found.'}</div>;
   }
 
   return (
@@ -127,7 +148,7 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
               <SeverityBadge severity={investigation.severity} size="sm" />
               <StatusBadge status={investigation.status} size="sm" />
               <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-semibold">
-                Confidence: {investigation.confidence}%
+                {investigation.confidence > 0 ? `Sample confidence: ${investigation.confidence}%` : 'Not assessed'}
               </span>
             </div>
             <p className="text-[11px] font-mono text-slate-400 mt-0.5">
@@ -178,6 +199,7 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
       <p id="evidence-export-unavailable" role="status" className="text-amber-300 font-mono text-xs">
         Evidence export unavailable: sample data has no verified digests, provenance, or chain of custody.
       </p>
+      {actionError && <p role="alert" className="text-amber-300 font-mono text-xs">{actionError}</p>}
 
       {/* Flagship Two-Column Workspace Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -198,23 +220,23 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
             <div className="space-y-1.5 text-[11px] text-slate-300">
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Target Host:</span>
-                <span className="text-cyan-300 font-bold">{investigation.host} (10.20.4.42)</span>
+                <span className="text-cyan-300 font-bold">{investigation.host}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">OS Environment:</span>
-                <span className="text-slate-200">Windows Server 2022 DC</span>
+                <span className="text-slate-400">Unavailable</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
                 <span className="text-slate-400">Enclave:</span>
-                <span className="text-slate-200">US-East-DC1 (Tier 1 Enclave)</span>
+                <span className="text-slate-400">Unavailable</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
-                <span className="text-slate-400">Preserved Records:</span>
-                <span className="text-amber-300 font-bold">{investigation.evidenceIds.length} Telemetry Artifacts</span>
+                <span className="text-slate-400">Linked Sample Records:</span>
+                <span className="text-amber-300 font-bold">{evidenceList.length} Sample Artifacts</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Ledger Hash:</span>
-                <span className="text-slate-400 truncate max-w-[150px]">sha256:7f3a9e21...</span>
+                <span className="text-slate-400">Unavailable</span>
               </div>
             </div>
           </div>
@@ -288,7 +310,7 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
                 </h3>
                 <span className="text-[10px] font-mono text-slate-400">Interactive Visual Node Correlation</span>
               </div>
-              <EvidenceGraph onOpenEvidence={handleOpenEvidence} />
+              <p role="status" className="text-slate-400">No evidence relationship graph is available for this sample case.</p>
             </div>
           )}
 
@@ -297,9 +319,9 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
             <div className="rounded-lg bg-[#0f151e] border border-slate-800 p-4 space-y-3 font-mono">
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  Preserved Evidence Items ({evidenceList.length})
+                  Linked Sample Evidence ({evidenceList.length})
                 </h3>
-                <span className="text-[10px] text-emerald-400">Chain of Custody Active</span>
+                <span className="text-[10px] text-amber-300">Chain of custody unavailable</span>
               </div>
 
               <div className="overflow-x-auto">
@@ -321,10 +343,10 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
                         className="hover:bg-slate-800/40 cursor-pointer transition-colors"
                       >
                         <td className="px-3 py-2.5 font-bold text-cyan-300">{ev.id}</td>
-                        <td className="px-3 py-2.5 text-slate-300">{ev.eventType}</td>
+                        <td className="px-3 py-2.5 text-slate-300">{ev.category}</td>
                         <td className="px-3 py-2.5 text-slate-400 text-[11px]">{ev.timestamp.slice(11, 19)}</td>
-                        <td className="px-3 py-2.5 text-slate-300 max-w-[200px] truncate" title={ev.keyDetail}>
-                          {ev.keyDetail}
+                        <td className="px-3 py-2.5 text-slate-300 max-w-[200px] truncate" title={ev.summary || ev.title}>
+                          {ev.summary || ev.title}
                         </td>
                         <td className="px-3 py-2.5 text-right text-cyan-400 font-semibold text-[11px]">
                           Open &rarr;
@@ -344,7 +366,7 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
                 <h3 className="font-mono text-xs font-bold text-slate-200 uppercase tracking-wider">
                   Analyst Collaboration &amp; Case Notes ({investigation.notes.length})
                 </h3>
-                <span className="text-[10px] font-mono text-slate-400">Authenticated Ledger</span>
+                <span className="text-[10px] font-mono text-slate-400">Local sample notes (not authenticated)</span>
               </div>
 
               {/* Add Note Input Form */}
