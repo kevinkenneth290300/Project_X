@@ -20,9 +20,10 @@ import {
 import { EventRateChart } from '../components/charts/EventRateChart';
 import { SeverityBadge } from '../components/severity/SeverityBadge';
 import { StatusBadge } from '../components/status/StatusBadge';
-import { NavigationSection, Agent, Investigation, Site } from '../types';
+import { NavigationSection, Agent, Investigation, Site, Detection } from '../types';
 import { agentService } from '../services/agentService';
 import { investigationService } from '../services/investigationService';
+import { detectionService } from '../services/detectionService';
 import { siteService, MOCK_SITES } from '../services/siteService';
 import { useScope } from '../context/ScopeContext';
 
@@ -40,26 +41,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { scope, sites, setSiteScope } = useScope();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
+  const [definitions, setDefinitions] = useState<Detection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
       setLoading(true);
-      const [agentsData, invData] = await Promise.all([
-        agentService.getAgents(scope.siteId, scope.zoneId),
-        investigationService.getInvestigations(),
-      ]);
-      setAgents(agentsData);
-      setInvestigations(invData);
-      setLoading(false);
+      setLoadError(null);
+      try {
+        const [agentsData, invData, sampleDefinitions] = await Promise.all([
+          agentService.getAgents(scope.siteId, scope.zoneId),
+          investigationService.getInvestigations(),
+          detectionService.getDetections(),
+        ]);
+        if (active) {
+          setAgents(agentsData);
+          setInvestigations(invData);
+          setDefinitions(sampleDefinitions);
+        }
+      } catch {
+        if (active) {
+          setAgents([]);
+          setInvestigations([]);
+          setDefinitions([]);
+          setLoadError('Dashboard sample data unavailable. Counts could not be loaded.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     };
     fetchData();
+    return () => { active = false; };
   }, [scope.siteId, scope.zoneId]);
 
-  const healthyCount = agents.filter((a) => a.status === 'Healthy').length || (scope.siteId === 'all' ? 685 : 184);
-  const warningCount = agents.filter((a) => a.status === 'Warning').length || (scope.siteId === 'all' ? 12 : 3);
-  const offlineCount = agents.filter((a) => a.status === 'Offline').length || (scope.siteId === 'all' ? 3 : 1);
-  const totalAgents = agents.length || (scope.siteId === 'all' ? 700 : 188);
+  const healthyCount = agents.filter((a) => a.status === 'Healthy').length;
+  const warningCount = agents.filter((a) => a.status === 'Warning').length;
+  const offlineCount = agents.filter((a) => a.status === 'Offline').length;
+  const totalAgents = agents.length;
+  const sampleCount = (count: number) => loading ? 'Loading...' : loadError ? 'Unavailable' : String(count);
+  const definitionCount = (severity: string) => sampleCount(definitions.filter((item) => item.severity === severity).length);
 
   const topAgents = agents.slice(0, 4);
 
@@ -78,15 +100,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <p className="text-[#8E9299] text-xs mt-0.5">
             {scope.siteId === 'all'
-              ? 'Aggregated IT/OT telemetry across all manufacturing plants, data centers, and industrial enclaves'
-              : `Real-time Purdue model telemetry, PLC health, and threat posture for ${scope.siteName}`}
+              ? 'Sample records across manufacturing plants, data centers, and industrial enclaves'
+              : `Sample records for ${scope.siteName}; no live monitoring or health measurements`}
           </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto font-mono text-[11px]">
           <span className="text-[#8E9299] flex items-center gap-1.5">
             <Clock size={13} className="text-[#8E9299]" />
-            02 Sep 2026 10:50 UTC
+            Sample capture: 02 Sep 2026 10:50 UTC
           </span>
           <button
             onClick={() => onNavigate('events')}
@@ -98,6 +120,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      <p role="status" className="text-amber-300 font-mono text-xs">Sample records and illustrations only. Live ingestion, delivery, connectivity, and monitoring status are unavailable.</p>
+      {loadError && <p role="alert" className="text-amber-300">{loadError}</p>}
+
       {/* Top Operational KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 font-mono">
         {/* Assets / Agents KPI */}
@@ -106,16 +131,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="p-3.5 rounded bg-[#151517] border border-[#242426] hover:border-cyan-500/50 hover:bg-[#1A1A1D] transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#8E9299] text-[11px] mb-1">
-            <span className="font-semibold uppercase tracking-wider">Fleet Assets</span>
+            <span className="font-semibold uppercase tracking-wider">Sample Agents</span>
             <Cpu size={14} className="text-[#8E9299] group-hover:text-cyan-400 transition-colors" />
           </div>
-          <div className="text-xl font-bold text-white">{scope.siteId === 'all' ? '1,248' : totalAgents}</div>
+          <div aria-label="Sample agent record count" className="text-xl font-bold text-white">{sampleCount(totalAgents)}</div>
           <div className="text-[10px] text-[#8E9299] flex items-center gap-1.5 mt-1 flex-wrap">
-            <span className="text-[#27AE60]">{healthyCount} Online</span>
+            <span className="text-[#8E9299]">{sampleCount(healthyCount)} Sample Healthy</span>
             <span>•</span>
-            <span className="text-[#F2994A]">{warningCount} Warn</span>
+            <span className="text-[#F2994A]">{sampleCount(warningCount)} Sample Warn</span>
             <span>•</span>
-            <span className="text-[#E64848]">{offlineCount} Off</span>
+            <span className="text-[#E64848]">{sampleCount(offlineCount)} Sample Off</span>
           </div>
         </div>
 
@@ -129,11 +154,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Activity size={14} className="text-[#8E9299] group-hover:text-cyan-400 transition-colors" />
           </div>
           <div className="text-xl font-bold text-white">
-            {scope.siteId === 'all' ? '38,400 / s' : '12,481 / s'}
+            Unavailable
           </div>
-          <div className="text-[10px] text-[#27AE60] flex items-center gap-1 mt-1">
-            <TrendingUp size={11} />
-            <span>0 dropped packets</span>
+          <div className="text-[10px] text-[#8E9299] flex items-center gap-1 mt-1">
+            <span>Drop count unknown</span>
           </div>
         </div>
 
@@ -146,8 +170,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="font-semibold uppercase tracking-wider">OT &amp; Syslog Feeds</span>
             <Radio size={14} className="text-cyan-400" />
           </div>
-          <div className="text-xl font-bold text-white">{scope.siteId === 'all' ? '24 Collectors' : '6 Streams'}</div>
-          <div className="text-[10px] text-cyan-300 mt-1">SNMPv3 &amp; RFC 5424</div>
+          <div className="text-xl font-bold text-white">Unavailable</div>
+          <div className="text-[10px] text-[#8E9299] mt-1">No live listener status</div>
         </div>
 
         {/* Network Infrastructure */}
@@ -159,9 +183,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="font-semibold uppercase tracking-wider">Industrial Switches</span>
             <Network size={14} className="text-amber-400" />
           </div>
-          <div className="text-xl font-bold text-white">{scope.siteId === 'all' ? '323 Switches' : '84 Switches'}</div>
-          <div className="text-[10px] text-[#27AE60] mt-1 flex items-center gap-1">
-            <CheckCircle2 size={11} /> 99.8% Port Uptime
+          <div className="text-xl font-bold text-white">Unavailable</div>
+          <div className="text-[10px] text-[#8E9299] mt-1 flex items-center gap-1">
+            Port uptime unknown
           </div>
         </div>
 
@@ -171,16 +195,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="p-3.5 rounded bg-[#151517] border border-[#242426] hover:border-rose-500/50 hover:bg-[#1A1A1D] transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#8E9299] text-[11px] mb-1">
-            <span className="font-semibold uppercase tracking-wider">Active Threats</span>
+            <span className="font-semibold uppercase tracking-wider">Global Sample Definitions</span>
             <ShieldAlert size={14} className="text-[#E64848] group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-xl font-bold text-white">
-            {scope.siteId === 'all' ? '31 Active' : '7 Active'}
+            {sampleCount(definitions.length)}
           </div>
           <div className="text-[10px] text-[#8E9299] flex items-center gap-1.5 mt-1 flex-wrap">
-            <span className="text-[#E64848] font-semibold">2 Critical</span>
+            <span className="text-[#E64848] font-semibold">{definitionCount('Critical')} Sample Critical</span>
             <span>•</span>
-            <span className="text-[#F2994A]">8 High</span>
+            <span className="text-[#F2994A]">{definitionCount('High')} Sample High</span>
           </div>
         </div>
       </div>
@@ -191,7 +215,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <Building2 size={15} className="text-cyan-400" />
-              <span>Plant &amp; Facility Telemetry Status</span>
+              <span>Sample Plant &amp; Facility Records</span>
             </h2>
             <button
               onClick={() => onNavigate('sites')}
@@ -227,15 +251,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div className="mt-3 space-y-1.5 text-[11px] bg-[#0b1017] p-2.5 rounded-lg border border-slate-800/70">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Purdue Zones:</span>
-                      <span className="text-slate-200 font-bold">{site.zones?.length || site.zonesCount || 4} Zones</span>
+                      <span className="text-slate-200 font-bold">{site.zones?.length ?? site.zonesCount ?? 0} Zones</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Assets Monitored:</span>
+                      <span className="text-slate-400">Sample Asset Count:</span>
                       <span className="text-cyan-300 font-bold">{site.agentsCount} Assets</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400">Ingestion:</span>
-                      <span className="text-emerald-400 font-bold">{site.eps.toLocaleString()} EPS</span>
+                      <span className="text-slate-400">Unavailable</span>
                     </div>
                   </div>
                 </div>
@@ -243,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-800/80 text-[10px]">
                   <span className="text-emerald-400 font-semibold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    {site.status}
+                    Sample: {site.status}
                   </span>
                   <span className="text-cyan-400 group-hover:translate-x-0.5 transition-transform">
                     Inspect Site &rarr;
@@ -262,10 +286,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center justify-between border-b border-[#242426] pb-2.5">
             <div>
               <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-                Telemetry Health &amp; Ingestion Stream
+                Sample Event Rate Illustration
               </h2>
               <p className="text-[11px] text-[#8E9299]">
-                Continuous event rate stream from Windows agents, syslog listeners, and SNMP pollers
+                Static fixture chart; not a live measurement or connected ingestion stream.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -275,29 +299,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <EventRateChart
-            currentRate={scope.siteId === 'all' ? '38,400 / s' : '12,481 / s'}
-            trend="+8.4%"
-            height={140}
-          />
+          <EventRateChart height={140} />
 
           {/* Operational Metrics Sub-row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[#242426] font-mono text-[11px]">
             <div className="p-2.5 rounded bg-[#1A1A1D] border border-[#242426]">
               <span className="text-[#5A5A5E] text-[10px] block uppercase font-bold">Delivery Success</span>
-              <span className="font-semibold text-[#27AE60]">99.998%</span>
+              <span className="font-semibold text-[#8E9299]">Unavailable</span>
             </div>
             <div className="p-2.5 rounded bg-[#1A1A1D] border border-[#242426]">
               <span className="text-[#5A5A5E] text-[10px] block uppercase font-bold">Dropped Events</span>
-              <span className="font-semibold text-white">0 events</span>
+              <span className="font-semibold text-[#8E9299]">Unknown</span>
             </div>
             <div className="p-2.5 rounded bg-[#1A1A1D] border border-[#242426]">
               <span className="text-[#5A5A5E] text-[10px] block uppercase font-bold">Fleet Queue Depth</span>
-              <span className="font-semibold text-[#F2994A]">3.2 GB</span>
+              <span className="font-semibold text-[#8E9299]">Unknown</span>
             </div>
             <div className="p-2.5 rounded bg-[#1A1A1D] border border-[#242426]">
               <span className="text-[#5A5A5E] text-[10px] block uppercase font-bold">Collector Relay</span>
-              <span className="font-semibold text-cyan-300">mTLS 1.3 Active</span>
+              <span className="font-semibold text-[#8E9299]">Unavailable</span>
             </div>
           </div>
         </div>
@@ -307,9 +327,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center justify-between border-b border-[#242426] pb-2.5">
               <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-                Security Activity
+                Global Sample Definition Severity
               </h2>
-              <span className="text-[10px] font-mono text-[#5A5A5E]">24H SUMMARY</span>
+              <span className="text-[10px] font-mono text-[#5A5A5E]">SAMPLE DATA</span>
             </div>
             <p className="text-[11px] text-[#8E9299] mt-2">
               Select any severity tier to inspect detections and correlation rules.
@@ -325,7 +345,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-[#E64848] font-semibold">Critical</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">2</span>
+                  <span className="text-base font-bold text-white">{definitionCount('Critical')}</span>
                   <ArrowRight size={13} className="text-[#E64848]" />
                 </div>
               </div>
@@ -339,7 +359,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-[#F2994A] font-semibold">High</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">8</span>
+                  <span className="text-base font-bold text-white">{definitionCount('High')}</span>
                   <ArrowRight size={13} className="text-[#F2994A]" />
                 </div>
               </div>
@@ -353,7 +373,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-yellow-400 font-semibold">Medium</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">21</span>
+                  <span className="text-base font-bold text-white">{definitionCount('Medium')}</span>
                   <ArrowRight size={13} className="text-yellow-400" />
                 </div>
               </div>
@@ -367,7 +387,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-blue-400 font-semibold">Low</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-white">94</span>
+                  <span className="text-base font-bold text-white">{definitionCount('Low')}</span>
                   <ArrowRight size={13} className="text-blue-400" />
                 </div>
               </div>
@@ -391,7 +411,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <SearchCheck size={16} className="text-[#F2994A]" />
               <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-                Active Investigations
+                Sample Investigation Examples
               </h2>
             </div>
             <button
