@@ -20,8 +20,6 @@ interface IntegrationsViewProps {
 export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }) => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchI = async () => {
@@ -33,23 +31,6 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
     fetchI();
   }, []);
 
-  const handleToggle = async (id: string) => {
-    const updated = await integrationService.toggleIntegration(id);
-    if (updated) {
-      setIntegrations(integrations.map((i) => (i.id === id ? updated : i)));
-    }
-  };
-
-  const handleTestConnection = async (id: string) => {
-    setTestingId(id);
-    const res = await integrationService.testConnection(id);
-    setTestResults((prev) => ({
-      ...prev,
-      [id]: `${res.message} (${res.latencyMs}ms latency)`,
-    }));
-    setTestingId(null);
-  };
-
   return (
     <div className="space-y-4 font-sans text-xs">
       {/* Header */}
@@ -58,14 +39,18 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
           <div className="flex items-center gap-2">
             <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">SIEM &amp; Log Forwarding</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-semibold">
-              EXTERNAL EXPORTERS
+              SAMPLE CONFIGURATION
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Configure real-time event replication and normalized forwarding to enterprise SIEM, Data Lake, and Object Storage
+            Sample integration configuration. No exporters are connected and no delivery has been performed.
           </p>
         </div>
       </div>
+
+      <p id="integration-operations-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Exporter connections and TLS connection tests are unavailable in this demonstration.
+      </p>
 
       {/* Integrations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
@@ -85,7 +70,7 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
                     <span className="text-[10px] text-slate-400">{item.type}</span>
                   </div>
                 </div>
-                <StatusBadge status={item.status} size="sm" showPulse={item.status === 'Connected'} />
+                <StatusBadge status="Unavailable" size="sm" showPulse={false} />
               </div>
 
               <div className="space-y-1 text-xs text-slate-300 font-mono">
@@ -106,32 +91,22 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
               </div>
             </div>
 
-            {testResults[item.id] && (
-              <div className="p-2 rounded bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 text-[11px] flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="shrink-0" />
-                <span>{testResults[item.id]}</span>
-              </div>
-            )}
-
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
               <button
-                onClick={() => handleTestConnection(item.id)}
-                disabled={testingId === item.id}
-                className="px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs cursor-pointer flex items-center gap-1.5"
+                disabled
+                aria-describedby="integration-operations-unavailable"
+                className="px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-xs cursor-not-allowed flex items-center gap-1.5"
               >
-                <Play size={12} className={testingId === item.id ? 'animate-spin' : ''} />
-                <span>{testingId === item.id ? 'Testing...' : 'Test Connection'}</span>
+                <Play size={12} />
+                <span>Test Connection</span>
               </button>
 
               <button
-                onClick={() => handleToggle(item.id)}
-                className={`px-3 py-1.5 rounded text-xs font-semibold cursor-pointer transition-colors ${
-                  item.status === 'Connected'
-                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-                    : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                }`}
+                disabled
+                aria-describedby="integration-operations-unavailable"
+                className="px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 text-xs font-semibold cursor-not-allowed"
               >
-                {item.status === 'Connected' ? 'Disconnect' : 'Connect Exporter'}
+                Connect Exporter
               </button>
             </div>
           </div>
