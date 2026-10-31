@@ -1,12 +1,16 @@
 # Warden — Industrial OT/ICS & Enterprise Security Telemetry Platform
 
-Warden is an enterprise-grade security telemetry, threat detection, and incident response platform tailored for industrial automation, critical infrastructure (OT/ICS), and hybrid enterprise IT environments.
+Warden is currently a fixture-backed demonstration console for industrial and enterprise security telemetry. It is not a production monitoring, authentication, detection, or incident-response platform.
+
+All console views display a persistent demonstration notice. Evidence is unverified sample data: no artifact digest, immutable preservation, chain of custody, or forensic admissibility is established. Evidence export is disabled until a verified workflow exists. Client-side scope is not an authorization boundary.
+
+The modules below describe intended product direction, not implemented production capabilities. See [issue #1 documentation](docs/remediation/001-demo-evidence-safety.md) and [the stabilization epic](https://github.com/kevinkenneth290300/Project_X/issues/23).
 
 ---
 
 ## 🏛️ System Architecture
 
-Warden enforces a strict hierarchical asset and telemetry scoping model based on the **ISA-99 / IEC 62443** and **Purdue Model for Industrial Control Systems (ICS)**:
+The prototype models hierarchical asset and telemetry scope based on the **ISA-99 / IEC 62443** and **Purdue Model for Industrial Control Systems (ICS)**:
 
 ```
 Warden Enterprise Master Console
