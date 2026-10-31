@@ -15,7 +15,6 @@ import {
 import { Agent, NavigationSection } from '../types';
 import { agentService } from '../services/agentService';
 import { StatusBadge } from '../components/status/StatusBadge';
-import { EnrollAgentModal } from '../components/dialogs/EnrollAgentModal';
 
 interface AgentsViewProps {
   onNavigate: (section: NavigationSection, params?: any) => void;
@@ -32,7 +31,6 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'All' | 'Healthy' | 'Warning' | 'Offline'>('All');
   const [profileFilter, setProfileFilter] = useState<string>('All');
   const [siteFilter, setSiteFilter] = useState<string>('All');
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
 
   const fetchAgents = async () => {
     setLoading(true);
@@ -73,14 +71,19 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowEnrollModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+            disabled
+            aria-describedby="fleet-operations-unavailable"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-mono text-xs font-semibold cursor-not-allowed"
           >
             <Plus size={14} />
             <span>Enroll Agent</span>
           </button>
         </div>
       </div>
+
+      <p id="fleet-operations-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Sample agent records only. Enrollment, restart, and remote IR/profile deployment are unavailable.
+      </p>
 
       {/* Metric Counters Banner */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
@@ -230,13 +233,6 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
         </div>
       </div>
 
-      <EnrollAgentModal
-        isOpen={showEnrollModal}
-        onClose={() => setShowEnrollModal(false)}
-        onAgentEnrolled={(newA) => {
-          setAgents([newA, ...agents]);
-        }}
-      />
     </div>
   );
 };
