@@ -23,18 +23,6 @@ interface EvidenceViewProps {
   onSelectInvestigation: (invId: string) => void;
 }
 
-// Deterministic mock hash helper for evidence display
-const getEvidenceHash = (id: string, eventId: number) => {
-  const hashes: Record<string, string> = {
-    'EVID-001': '8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4',
-    'EVID-002': 'd57fe2b947c0ea4e8b4f9e1c0ded4a3d721162114671a0b5ab34b1cef01edd60',
-    'EVID-003': '35293297a7a3b38ef040003b41d24a926d83501a4e1d533ab99a80b06a099a5e',
-    'EVID-004': 'a1945d83777bc89d81d2df524b0744e88383e6a2569e5d7990b79cfb7b62fb9c',
-    'EVID-005': '1a72d3f746194602f06a0fd62923595b11122a61369cfd6ae6be719875f6d893',
-  };
-  return hashes[id] || `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`;
-};
-
 export const EvidenceView: React.FC<EvidenceViewProps> = ({
   onNavigate,
   onSelectEvent,
@@ -63,8 +51,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
       (e.category || '').toLowerCase().includes(searchTarget) ||
       (e.host || '').toLowerCase().includes(searchTarget) ||
       (e.summary || '').toLowerCase().includes(searchTarget) ||
-      String(e.eventId || '').includes(searchTarget) ||
-      getEvidenceHash(e.id, e.eventId).includes(searchTarget)
+      String(e.eventId || '').includes(searchTarget)
     );
   });
 
@@ -74,13 +61,13 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#242426]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-base font-bold text-[#EDEDED] tracking-tight">Evidence Vault &amp; Chain of Custody</h1>
+            <h1 className="font-mono text-base font-bold text-[#EDEDED] tracking-tight">Sample Evidence</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#102A1C] border border-[#27AE60]/40 text-[#27AE60] font-semibold">
-              CRYPTOGRAPHIC PRESERVATION
+              UNVERIFIED SAMPLE
             </span>
           </div>
           <p className="text-[#8E9299] text-xs mt-0.5">
-            Immutable Windows telemetry artifacts preserved for forensic admissibility and incident response
+            Sample artifacts have no verified digests, immutable preservation, or chain of custody.
           </p>
         </div>
       </div>
@@ -88,20 +75,20 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
       {/* Top Counters */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
         <div className="p-3 rounded-lg bg-[#151517] border border-[#242426]">
-          <div className="text-[#8E9299] text-[10px] uppercase">Preserved Artifacts</div>
+          <div className="text-[#8E9299] text-[10px] uppercase">Sample Artifacts</div>
           <div className="text-lg font-bold text-[#EDEDED] mt-0.5">{evidence.length} Items</div>
         </div>
         <div className="p-3 rounded-lg bg-[#151517] border border-[#242426]">
           <div className="text-[#8E9299] text-[10px] uppercase">Integrity Verification</div>
-          <div className="text-lg font-bold text-[#27AE60] mt-0.5">100% Valid</div>
+          <div className="text-lg font-bold text-[#8E9299] mt-0.5">Unavailable</div>
         </div>
         <div className="p-3 rounded-lg bg-[#151517] border border-[#242426]">
-          <div className="text-[#8E9299] text-[10px] uppercase">Active Cases</div>
-          <div className="text-lg font-bold text-[#F2994A] mt-0.5">3 Dossiers</div>
+          <div className="text-[#8E9299] text-[10px] uppercase">Chain of Custody</div>
+          <div className="text-lg font-bold text-[#8E9299] mt-0.5">Unavailable</div>
         </div>
         <div className="p-3 rounded-lg bg-[#151517] border border-[#242426]">
-          <div className="text-[#8E9299] text-[10px] uppercase">Hashing Algorithm</div>
-          <div className="text-lg font-bold text-[#8E9299] mt-0.5">SHA-256</div>
+          <div className="text-[#8E9299] text-[10px] uppercase">Verified Digests</div>
+          <div className="text-lg font-bold text-[#8E9299] mt-0.5">Unavailable</div>
         </div>
       </div>
 
@@ -113,11 +100,11 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search evidence ID, host, category, hash..."
+            placeholder="Search evidence ID, host, category..."
             className="w-full pl-8 pr-3 py-1.5 rounded bg-[#1A1A1D] border border-[#242426] text-[#EDEDED] text-xs focus:border-[#4B88FF] focus:outline-none placeholder-[#5A5A5E]"
           />
         </div>
-        <span className="text-[11px] text-[#8E9299]">{filtered.length} artifacts indexed</span>
+        <span className="text-[11px] text-[#8E9299]">{filtered.length} sample artifacts</span>
       </div>
 
       {/* Evidence Table */}
@@ -132,14 +119,13 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                 <th className="px-3 py-3">Host</th>
                 <th className="px-3 py-3">Timestamp (UTC)</th>
                 <th className="px-3 py-3">Summary / Key Detail</th>
-                <th className="px-3 py-3">SHA-256 Hash</th>
+                <th className="px-3 py-3">Digest</th>
                 <th className="px-3 py-3">Status</th>
                 <th className="px-3 py-3 text-right">Inspect Event</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242426]">
               {filtered.map((item) => {
-                const itemHash = getEvidenceHash(item.id, item.eventId);
                 return (
                   <tr
                     key={item.id}
@@ -173,12 +159,12 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                     <td className="px-3 py-3 text-[#EDEDED] max-w-[260px] truncate" title={item.summary || item.title}>
                       {item.summary || item.title}
                     </td>
-                    <td className="px-3 py-3 text-[#5A5A5E] text-[10px] truncate max-w-[120px]" title={itemHash}>
-                      {itemHash.slice(0, 16)}...
+                    <td className="px-3 py-3 text-[#8E9299] text-[10px]">
+                      Not calculated
                     </td>
                     <td className="px-3 py-3">
                       <span className="text-[10px] px-2 py-0.5 rounded bg-[#102A1C] border border-[#27AE60]/40 text-[#27AE60] font-semibold">
-                        VERIFIED
+                        Unverified
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right text-[#4B88FF] text-[11px] font-semibold group-hover:underline">
@@ -189,6 +175,9 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
               })}
             </tbody>
           </table>
+          {!loading && filtered.length === 0 && (
+            <p role="status" className="p-4 text-[#8E9299]">No sample evidence found. Integrity verification is unavailable.</p>
+          )}
         </div>
       </div>
     </div>

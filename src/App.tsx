@@ -309,6 +309,10 @@ function AppContent() {
           onNavigate={handleNavigate}
         />
 
+        <div role="note" aria-label="Demonstration only" className="border-y border-amber-700/60 bg-amber-950/40 px-6 py-3 text-xs text-amber-200">
+          <strong>Demonstration only.</strong> Sample data; no live monitoring, enforced access control, or verified evidence.
+        </div>
+
         <main className="flex-1 p-6 overflow-y-auto max-w-[1600px] w-full mx-auto">
           {renderActiveView()}
         </main>
