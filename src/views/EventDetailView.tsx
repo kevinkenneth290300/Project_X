@@ -128,7 +128,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition-colors cursor-pointer"
           >
             <Plus size={13} />
-            <span>Create Detection</span>
+            <span>Create Sample Definition</span>
           </button>
         </div>
       </div>
