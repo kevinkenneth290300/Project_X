@@ -51,27 +51,19 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
     fetchDetections();
   }, [severityFilter, statusFilter, search]);
 
-  const handleToggle = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const updated = await detectionService.toggleDetectionStatus(id);
-    if (updated) {
-      setDetections(detections.map((d) => (d.id === id ? updated : d)));
-    }
-  };
-
   return (
     <div className="space-y-4 font-sans text-xs">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Detections Console</h1>
+            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Sample Detection Definitions</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-950/60 border border-red-800/40 text-red-300 font-semibold">
-              MITRE ATT&amp;CK CORRELATION
+              NOT DEPLOYED
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Deterministic logic rules, telemetry thresholds, and behavioral pattern extractors
+            Locally stored demonstration definitions. No real rule is active and no evaluation engine is connected.
           </p>
         </div>
 
@@ -80,9 +72,13 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors"
         >
           <Plus size={14} />
-          <span>New Detection Rule</span>
+          <span>New Sample Definition</span>
         </button>
       </div>
+
+      <p id="detection-list-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Detection validation, backtesting, and rule deployment are unavailable.
+      </p>
 
       {/* Filter and Search Bar */}
       <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono">
@@ -118,7 +114,7 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
 
           {/* Status Tabs */}
           <div className="flex items-center rounded bg-slate-900 border border-slate-700 p-0.5 text-[11px]">
-            {(['All', 'Active', 'Testing', 'Disabled'] as const).map((st) => (
+            {(['All', 'Disabled'] as const).map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -156,20 +152,16 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
 
               <div className="flex items-center gap-3">
                 <span className="text-[11px] px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300">
-                  Confidence: {det.confidence}%
+                  {det.confidence > 0 ? `Sample confidence: ${det.confidence}%` : 'Not assessed'}
                 </span>
                 <button
-                  onClick={(e) => handleToggle(e, det.id)}
-                  className="flex items-center gap-1 text-slate-300 hover:text-white cursor-pointer"
-                  title="Toggle Rule"
+                  disabled
+                  aria-label={`Deploy sample definition ${det.name}`}
+                  aria-describedby="detection-list-unavailable"
+                  className="flex items-center gap-1 text-slate-400 cursor-not-allowed"
+                  title="Rule deployment unavailable"
                 >
-                  {det.status === 'Active' ? (
-                    <span className="text-emerald-400 flex items-center gap-1 text-[11px]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
-                    </span>
-                  ) : (
-                    <span className="text-slate-500 text-[11px]">{det.status}</span>
-                  )}
+                  <ToggleLeft size={13} /><span className="text-slate-400 text-[11px]">Not deployed</span>
                 </button>
               </div>
             </div>
@@ -188,11 +180,11 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
                   MITRE: {det.mitreAttack.id} ({det.mitreAttack.name})
                 </span>
                 <span>Tactic: {det.mitreAttack.tactic}</span>
-                <span className="text-slate-300">Triggers (24h): {det.triggersCount}</span>
+                <span className="text-slate-300">Sample triggers: {det.triggersCount}</span>
               </div>
 
               <div className="flex items-center gap-2">
-                <span>Last Fired: {det.lastTriggered}</span>
+                <span>Sample last trigger: {det.lastTriggered}</span>
                 <span className="text-cyan-400 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                   Rule Detail <ArrowRight size={13} />
                 </span>
@@ -205,9 +197,7 @@ export const DetectionsView: React.FC<DetectionsViewProps> = ({
       <CreateDetectionModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onDetectionCreated={(newD) => {
-          setDetections([newD, ...detections]);
-        }}
+        onDetectionCreated={() => { fetchDetections(); }}
       />
     </div>
   );
