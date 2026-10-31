@@ -1,4 +1,4 @@
-import { Site, Zone, SiteScope, AssetGroup, StatusLevel } from '../types';
+import { Site, Zone, SiteScope, AssetGroup, StatusLevel, ZONE_TYPES, ZONE_SECURITY_CLASSES } from '../types';
 
 export const MOCK_SITES: Site[] = [
   {
@@ -601,30 +601,85 @@ export const MOCK_GROUPS: AssetGroup[] = [
   },
 ];
 
+function freezeSnapshot<Value>(value: Value): Value {
+  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  Object.freeze(value);
+  for (const nested of Object.values(value)) freezeSnapshot(nested);
+  return value;
+}
+
+let sitesStore: readonly Site[] = freezeSnapshot(structuredClone(MOCK_SITES));
+const siteSubscribers = new Set<() => void>();
+
+function publishSites(sites: Site[]): void {
+  sitesStore = freezeSnapshot(sites);
+  for (const subscriber of siteSubscribers) subscriber();
+}
+
 export const siteService = {
+  subscribeSites: (subscriber: () => void): (() => void) => {
+    siteSubscribers.add(subscriber);
+    return () => { siteSubscribers.delete(subscriber); };
+  },
+
+  getSitesSnapshot: (): readonly Site[] => sitesStore,
+
+  createLocalSite: (data: Pick<Site, 'name' | 'code' | 'location' | 'description'>, organization = 'Acme Manufacturing'): Site => {
+    const name = data.name.trim();
+    const code = data.code.trim().toUpperCase();
+    if (!name || !/^[A-Z0-9-]{2,32}$/.test(code)) throw new Error('A site name and unique 2-32 character site code are required');
+    if (sitesStore.some((site) => site.code.toUpperCase() === code)) throw new Error('Site code already exists');
+    const site: Site = {
+      id: `site-${crypto.randomUUID()}`,
+      name,
+      code,
+      organization,
+      status: 'Unknown',
+      location: data.location.trim(),
+      description: data.description.trim() || 'Local sample site; not provisioned on a backend.',
+      healthScore: null,
+      assetsCount: 0,
+      agentsCount: 0,
+      zonesCount: 0,
+      networkDevicesCount: 0,
+      syslogSourcesCount: 0,
+      eps: 0,
+      activeDetections: 0,
+      activeInvestigations: 0,
+      lastTelemetry: 'Unavailable',
+      lastTelemetrySecondsAgo: 0,
+      connectivity: 'Unavailable',
+      certStatus: 'Unavailable',
+      configSync: 'Unavailable',
+      zones: [],
+      collectorEndpoint: '',
+    };
+    publishSites([...sitesStore, site]);
+    return structuredClone(site);
+  },
+
+  validateSiteZone: (siteId: string, zoneId: string): Zone => {
+    const site = sitesStore.find((candidate) => candidate.id === siteId);
+    if (!site) throw new Error('Site not found');
+    const zone = site.zones.find((candidate) => candidate.id === zoneId && candidate.siteId === siteId);
+    if (!zone) throw new Error('Zone does not belong to the selected site');
+    return structuredClone(zone);
+  },
+
   getSites: async (scope?: SiteScope): Promise<Site[]> => {
-    if (!scope || scope.siteId === 'all') return MOCK_SITES;
-    return MOCK_SITES.filter((s) => s.id === scope.siteId);
+    const sites = !scope || scope.siteId === 'all' ? sitesStore : sitesStore.filter((site) => site.id === scope.siteId);
+    return structuredClone([...sites]);
   },
 
   getSiteById: async (siteId: string): Promise<Site | undefined> => {
-    return MOCK_SITES.find((s) => s.id === siteId || s.name.toLowerCase().includes(siteId.toLowerCase()));
+    const site = sitesStore.find((candidate) => candidate.id === siteId);
+    return site ? structuredClone(site) : undefined;
   },
 
   getZones: async (scope?: SiteScope): Promise<Zone[]> => {
-    const allZones = MOCK_SITES.flatMap((s) => s.zones);
-    if (!scope || scope.siteId === 'all') {
-      if (scope?.zoneId && scope.zoneId !== 'all') {
-        return allZones.filter((z) => z.id === scope.zoneId || z.name === scope.zoneName);
-      }
-      return allZones;
-    }
-    const site = MOCK_SITES.find((s) => s.id === scope.siteId);
-    if (!site) return [];
-    if (scope.zoneId && scope.zoneId !== 'all') {
-      return site.zones.filter((z) => z.id === scope.zoneId || z.name === scope.zoneName);
-    }
-    return site.zones;
+    const sites = !scope || scope.siteId === 'all' ? sitesStore : sitesStore.filter((site) => site.id === scope.siteId);
+    const zones = sites.flatMap((site) => site.zones);
+    return structuredClone(scope?.zoneId && scope.zoneId !== 'all' ? zones.filter((zone) => zone.id === scope.zoneId) : zones);
   },
 
   getGroups: async (scope?: SiteScope): Promise<AssetGroup[]> => {
@@ -633,28 +688,34 @@ export const siteService = {
   },
 
   createZone: async (siteId: string, zoneData: Partial<Zone>): Promise<Zone> => {
-    const site = MOCK_SITES.find((s) => s.id === siteId);
+    const site = sitesStore.find((candidate) => candidate.id === siteId);
+    if (!site) throw new Error('Site not found');
+    if (zoneData.siteId && zoneData.siteId !== siteId) throw new Error('Zone does not belong to the selected site');
+    if (!zoneData.name?.trim()) throw new Error('Zone name is required');
+    if (zoneData.zoneType && !ZONE_TYPES.some((type) => type === zoneData.zoneType)) throw new Error('Unsupported zone type');
+    if (zoneData.securityClassification && !ZONE_SECURITY_CLASSES.some((classification) => classification === zoneData.securityClassification)) throw new Error('Unsupported zone security classification');
+    if (zoneData.parentZoneId) siteService.validateSiteZone(siteId, zoneData.parentZoneId);
     const newZone: Zone = {
-      id: `zone-${Date.now()}`,
+      id: `zone-${crypto.randomUUID()}`,
       siteId,
-      siteName: site?.name || 'Chennai Plant',
-      name: zoneData.name || 'New Custom Zone',
-      description: zoneData.description || 'Custom configured operational zone',
+      siteName: site.name,
+      name: zoneData.name.trim(),
+      description: zoneData.description || 'Local sample zone; no collection or security policy applied.',
       zoneType: zoneData.zoneType || 'Manufacturing Zone',
       purdueLevel: zoneData.purdueLevel || 'Level 2/3 - Operations',
       securityClassification: zoneData.securityClassification || 'High Security',
-      networkRanges: zoneData.networkRanges || ['10.50.1.0/24'],
+      parentZoneId: zoneData.parentZoneId,
+      networkRanges: zoneData.networkRanges || [],
       assetCount: 0,
       networkDevicesCount: 0,
       eps: 0,
-      status: 'Healthy',
-      telemetrySources: zoneData.telemetrySources || ['Windows Event Log', 'Syslog'],
-      collectionPolicies: zoneData.collectionPolicies || ['Production Baseline'],
+      status: 'Unknown',
+      telemetrySources: [],
+      collectionPolicies: [],
       assignedGroups: zoneData.assignedGroups || [],
     };
-    if (site) {
-      site.zones.push(newZone);
-    }
-    return newZone;
+    const updatedSite = { ...site, zones: [...site.zones, newZone], zonesCount: site.zones.length + 1 };
+    publishSites(sitesStore.map((candidate) => candidate.id === siteId ? updatedSite : candidate));
+    return structuredClone(newZone);
   },
 };
