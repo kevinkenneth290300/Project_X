@@ -95,7 +95,7 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-mono text-lg font-bold text-slate-100">{agent.hostname}</h1>
-              <StatusBadge status={agent.status} size="sm" showPulse />
+              <StatusBadge status={`Sample: ${agent.status}`} size="sm" showPulse={false} />
               {investigationMode && (
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-600/50 text-amber-300 font-bold flex items-center gap-1">
                   <Flame size={12} /> SAMPLE IR CONFIGURATION
@@ -176,11 +176,11 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
           <div className="font-bold text-slate-100 mt-1">{agent.uptime}</div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
-          <div className="text-slate-400 text-[10px] uppercase">Throughput</div>
+          <div className="text-slate-400 text-[10px] uppercase">Sample Throughput</div>
           <div className="font-bold text-emerald-400 mt-1">{agent.eventsPerSec}</div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
-          <div className="text-slate-400 text-[10px] uppercase">Queue Backpressure</div>
+          <div className="text-slate-400 text-[10px] uppercase">Sample Queue</div>
           <div className="font-bold text-amber-400 mt-1">{agent.queueSize}</div>
         </div>
       </div>
