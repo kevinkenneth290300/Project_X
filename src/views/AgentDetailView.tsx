@@ -43,7 +43,6 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
   const [detections, setDetections] = useState<Detection[]>([]);
   const [loading, setLoading] = useState(true);
   const [investigationMode, setInvestigationMode] = useState(true);
-  const [togglingMode, setTogglingMode] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,17 +64,6 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
     fetchData();
   }, [agentId]);
 
-  const handleToggleInvestigationMode = async () => {
-    if (!agent) return;
-    setTogglingMode(true);
-    const updated = await agentService.toggleInvestigationMode(agent.id);
-    if (updated) {
-      setAgent(updated);
-      setInvestigationMode(updated.investigationMode);
-    }
-    setTogglingMode(false);
-  };
-
   if (loading || !agent) {
     return (
       <div className="p-8 text-center font-mono text-slate-400">
@@ -84,6 +72,13 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
       </div>
     );
   }
+
+  const channels = Object.entries(agent.collection).filter(([, enabled]) => enabled).map(([name]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    filterMode: 'Sample only',
+    eventRate: 'Unavailable',
+    status: 'Unavailable',
+  }));
 
   return (
     <div className="space-y-4 font-sans text-xs">
@@ -102,8 +97,8 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
               <h1 className="font-mono text-lg font-bold text-slate-100">{agent.hostname}</h1>
               <StatusBadge status={agent.status} size="sm" showPulse />
               {investigationMode && (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-600/50 text-amber-300 font-bold flex items-center gap-1 animate-pulse">
-                  <Flame size={12} /> INVESTIGATION MODE ACTIVE
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-600/50 text-amber-300 font-bold flex items-center gap-1">
+                  <Flame size={12} /> SAMPLE IR CONFIGURATION
                 </span>
               )}
             </div>
@@ -124,6 +119,10 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
         </div>
       </div>
 
+      <p id="agent-operations-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Enrollment, restart, and IR/profile deployment are unavailable. Sample agents are not connected endpoints.
+      </p>
+
       {/* Investigation Mode High-Detail Collection Banner */}
       <div
         className={`p-4 rounded-xl border transition-all ${
@@ -137,27 +136,21 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
             <div className="flex items-center gap-2">
               <Flame size={16} className={investigationMode ? 'text-amber-400' : 'text-slate-500'} />
               <h3 className="font-mono text-sm font-bold text-slate-100">
-                Investigation Mode (Temporary High-Detail Collection)
+                Investigation Mode (Sample Collection Profile)
               </h3>
             </div>
             <p className="text-slate-300 text-xs max-w-2xl leading-relaxed">
-              When enabled, the Warden endpoint agent switches from standard baseline filtering to collecting{' '}
-              <strong className="text-amber-300">all event channels</strong>, detailed Script Block Logging (EID 4104),
-              full process creation command lines (EID 4688), and live memory string hashes.
+              This is sample profile configuration only. No IR command can be sent and no endpoint collection change can be deployed from this demonstration.
             </p>
           </div>
 
           <button
-            onClick={handleToggleInvestigationMode}
-            disabled={togglingMode}
-            className={`px-4 py-2 rounded font-mono text-xs font-semibold cursor-pointer transition-all shrink-0 flex items-center gap-2 ${
-              investigationMode
-                ? 'bg-amber-600 hover:bg-amber-500 text-slate-950 shadow-md'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600'
-            }`}
+            disabled
+            aria-describedby="agent-operations-unavailable"
+            className="px-4 py-2 rounded font-mono text-xs font-semibold cursor-not-allowed shrink-0 flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-400"
           >
             <Sliders size={13} />
-            <span>{investigationMode ? 'Disable Investigation Mode' : 'Enable Investigation Mode'}</span>
+            <span>Deploy Investigation Mode</span>
           </button>
         </div>
       </div>
@@ -197,12 +190,12 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
         {/* Active Windows Channels List (1 col) */}
         <div className="rounded-lg bg-[#0f151e] border border-slate-800 p-4 space-y-3 font-mono">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-            <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wide">Active Channels</h2>
-            <span className="text-[10px] text-cyan-400 font-semibold">5 Active</span>
+            <h2 className="text-sm font-bold text-slate-100 uppercase tracking-wide">Sample Channels</h2>
+            <span className="text-[10px] text-cyan-400 font-semibold">{channels.length} Sample Enabled</span>
           </div>
 
           <div className="space-y-2">
-            {agent.channels.map((chan) => (
+            {channels.map((chan) => (
               <div
                 key={chan.name}
                 className="p-2.5 rounded bg-[#0b1017] border border-slate-800/80 flex items-center justify-between"
@@ -221,11 +214,11 @@ export const AgentDetailView: React.FC<AgentDetailViewProps> = ({
           <div className="p-2.5 rounded bg-slate-900/60 border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1">
             <div className="flex justify-between">
               <span>Disk Buffer Spool:</span>
-              <span className="text-slate-200">C:\ProgramData\Warden\spool\</span>
+              <span className="text-slate-400">Unavailable</span>
             </div>
             <div className="flex justify-between">
               <span>TLS Fingerprint:</span>
-              <span className="text-slate-200">sha256:8f2a..9b11</span>
+              <span className="text-slate-400">Unavailable</span>
             </div>
           </div>
         </div>
