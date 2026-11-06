@@ -31,40 +31,38 @@ export const EventsView: React.FC<EventsViewProps> = ({
 }) => {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState<SeverityLevel | 'All'>('All');
   const [hostFilter, setHostFilter] = useState<string>(initialHostFilter);
   const [channelFilter, setChannelFilter] = useState<string>('All');
   const [eventIdFilter, setEventIdFilter] = useState<string>('All');
   const [timeRange, setTimeRange] = useState('Last 1h');
-  const [isLiveStreaming, setIsLiveStreaming] = useState(true);
 
   const fetchEvents = async () => {
     setLoading(true);
-    const data = await eventService.getEvents({
-      search,
-      severity: severityFilter,
-      host: hostFilter,
-      channel: channelFilter,
-      eventId: eventIdFilter,
-      timeRange,
-    });
-    setEvents(data);
-    setLoading(false);
+    setLoadError(null);
+    try {
+      const data = await eventService.getEvents({
+        search,
+        severity: severityFilter,
+        host: hostFilter,
+        channel: channelFilter,
+        eventId: eventIdFilter,
+        timeRange,
+      });
+      setEvents(data);
+    } catch {
+      setEvents([]);
+      setLoadError('Sample events unavailable: the data could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchEvents();
   }, [search, severityFilter, hostFilter, channelFilter, eventIdFilter, timeRange]);
-
-  // Simulate live ingestion pulsing
-  useEffect(() => {
-    if (!isLiveStreaming) return;
-    const interval = setInterval(() => {
-      // Periodic subtle heartbeat
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [isLiveStreaming]);
 
   return (
     <div className="space-y-4 font-sans text-xs">
@@ -72,40 +70,32 @@ export const EventsView: React.FC<EventsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Event Explorer</h1>
+            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Sample Event Explorer</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-semibold">
-              STRUCTURED LOG STREAM
+              STATIC SAMPLE DATA
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Windows event logs, Sysmon, Script Block Logging, and Normalized Syslog stream
+            Fixture event records, not live endpoint or collector telemetry.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsLiveStreaming(!isLiveStreaming)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-semibold cursor-pointer border transition-colors ${
-              isLiveStreaming
-                ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
-                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
-            }`}
+            disabled
+            aria-describedby="live-stream-unavailable"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-semibold cursor-not-allowed border border-slate-700 bg-slate-900 text-slate-400"
           >
-            {isLiveStreaming ? (
-              <>
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <Pause size={12} />
-                <span>Streaming Live</span>
-              </>
-            ) : (
-              <>
-                <Play size={12} />
-                <span>Resume Stream</span>
-              </>
-            )}
+            <Play size={12} /><span>Live Stream Unavailable</span>
           </button>
         </div>
       </div>
+
+      <p id="live-stream-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Live telemetry is unavailable; no collector stream is connected. {loading ? 'Loading sample records...' : loadError ? 'Record count unavailable.' : `${events.length} sample event records.`}
+      </p>
+      {loadError && <p role="alert" className="text-amber-300">{loadError}</p>}
+      {!loading && !loadError && events.length === 0 && <p role="status" className="text-slate-400">No sample events found.</p>}
 
       {/* Fast Filter Bar */}
       <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800 space-y-2.5 font-mono text-xs">
@@ -158,8 +148,8 @@ export const EventsView: React.FC<EventsViewProps> = ({
               onChange={(e) => setHostFilter(e.target.value)}
               className="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200 focus:outline-none"
             >
-              <option value="All">All Hosts (184)</option>
-              <option value="SERVER-42">SERVER-42 (IR Active)</option>
+              <option value="All">All Sample Hosts</option>
+              <option value="SERVER-42">SERVER-42 (Sample)</option>
               <option value="DC-01">DC-01 (Domain Controller)</option>
               <option value="DC-02">DC-02</option>
               <option value="APP-17">APP-17</option>

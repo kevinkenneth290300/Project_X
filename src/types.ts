@@ -646,7 +646,7 @@ export interface HealthStatus {
   };
   components: {
     name: string;
-    status: 'Healthy' | 'Warning' | 'Degraded' | 'Operational';
+    status: 'Healthy' | 'Warning' | 'Degraded' | 'Operational' | 'Unavailable';
     latency: string;
     throughput: string;
     details: string;

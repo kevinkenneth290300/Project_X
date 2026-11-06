@@ -48,7 +48,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
     fetchAgents();
   }, [search, statusFilter, profileFilter, siteFilter]);
 
-  const totalCount = 184;
+  const totalCount = agents.length;
   const healthyCount = agents.filter((a) => a.status === 'Healthy').length;
   const investigationCount = agents.filter((a) => a.investigationMode).length;
   const offlineCount = agents.filter((a) => a.status === 'Offline').length;
@@ -61,11 +61,11 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
           <div className="flex items-center gap-2">
             <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Host Management</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-semibold">
-              WINDOWS AGENT FLEET
+              SAMPLE AGENT RECORDS
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Windows telemetry collectors and syslog endpoint status across enclaves
+            Fixture agent records only; health, rates, and heartbeat values are samples, not verified connectivity.
           </p>
         </div>
 
@@ -88,20 +88,20 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
       {/* Metric Counters Banner */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono">
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
-          <div className="text-slate-400 text-[10px] uppercase">Total Enrolled Fleet</div>
+          <div className="text-slate-400 text-[10px] uppercase">Sample Fleet Records</div>
           <div className="text-xl font-bold text-slate-100 mt-0.5">{totalCount} Hosts</div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
-          <div className="text-slate-400 text-[10px] uppercase">Active &amp; Ingesting</div>
-          <div className="text-xl font-bold text-emerald-400 mt-0.5">179 Active</div>
+          <div className="text-slate-400 text-[10px] uppercase">Sample Healthy Records</div>
+          <div className="text-xl font-bold text-slate-200 mt-0.5">{healthyCount} Samples</div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f151e] border border-amber-900/40 bg-amber-950/10">
-          <div className="text-amber-400 text-[10px] uppercase font-semibold">Investigation Mode</div>
-          <div className="text-xl font-bold text-amber-300 mt-0.5">1 (SERVER-42)</div>
+          <div className="text-amber-400 text-[10px] uppercase font-semibold">Sample IR Configuration</div>
+          <div className="text-xl font-bold text-amber-300 mt-0.5">{investigationCount} Samples</div>
         </div>
         <div className="p-3 rounded-lg bg-[#0f151e] border border-rose-900/40 bg-rose-950/10">
-          <div className="text-rose-400 text-[10px] uppercase font-semibold">Offline / Stale</div>
-          <div className="text-xl font-bold text-rose-300 mt-0.5">2 Hosts</div>
+          <div className="text-rose-400 text-[10px] uppercase font-semibold">Sample Offline Records</div>
+          <div className="text-xl font-bold text-rose-300 mt-0.5">{offlineCount} Samples</div>
         </div>
       </div>
 
@@ -212,7 +212,7 @@ export const AgentsView: React.FC<AgentsViewProps> = ({
                     </span>
                   </td>
                   <td className="px-3 py-3">
-                    <StatusBadge status={agent.status} size="sm" showPulse />
+                    <StatusBadge status={`Sample: ${agent.status}`} size="sm" showPulse={false} />
                   </td>
                   <td className="px-3 py-3 font-semibold text-slate-200">{agent.eventsPerSec}</td>
                   <td className="px-3 py-3">
