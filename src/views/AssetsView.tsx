@@ -42,6 +42,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
   const [purdueFilter, setPurdueFilter] = useState<string>('All');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
 
   // New asset form state
   const [newAssetData, setNewAssetData] = useState({
@@ -89,36 +90,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
   const handleRegisterAsset = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAssetData.name) return;
-    const newAsset: Asset = {
-      id: `asset-${Date.now().toString().slice(-4)}`,
-      name: newAssetData.name,
-      ip: newAssetData.ip,
-      macAddress: '00:1B:1B:77:88:99',
-      siteId: scope.siteId === 'all' ? 'chennai' : scope.siteId,
-      siteName: scope.siteId === 'all' ? 'Chennai Plant' : scope.siteName,
-      zoneId: scope.zoneId === 'all' ? 'chn-mfg' : scope.zoneId,
-      zoneName: scope.zoneId === 'all' ? 'Manufacturing Zone' : scope.zoneName,
-      groupName: 'Industrial Machinery',
-      type: newAssetData.type,
-      purdueLevel: newAssetData.purdueLevel,
-      vendor: newAssetData.vendor,
-      model: newAssetData.model,
-      firmwareOrOs: 'Firmware v3.2.0',
-      status: 'Healthy',
-      criticality: newAssetData.criticality,
-      telemetryStatus: 'Syslog Streaming',
-      eps: 24,
-      lastSeen: 'Just now',
-      lastSeenSecondsAgo: 2,
-      activeDetectionsCount: 0,
-      activeInvestigationsCount: 0,
-      openPorts: [502, 102],
-      protocols: ['Modbus TCP', 'S7comm'],
-      collectorNode: '10.10.0.15 (Warden Collector)',
-    };
-    setAssets([newAsset, ...assets]);
-    setShowRegisterModal(false);
+    setRegistrationError('Asset registration is unavailable until a shared authoritative asset registry exists. No site or zone will be guessed.');
   };
 
   const getTelemetryBadge = (status: string) => {
@@ -205,14 +177,18 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowRegisterModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+            disabled
+            aria-describedby="asset-registration-unavailable"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-mono text-xs font-semibold cursor-not-allowed"
           >
             <Plus size={14} />
             <span>Register Asset</span>
           </button>
         </div>
       </div>
+
+      <p id="asset-registration-unavailable" role="status" className="text-amber-300 font-mono text-xs">Asset registration is unavailable until a shared authoritative registry exists. No default plant/zone, device discovery, or live telemetry will be fabricated.</p>
+      {registrationError && <p role="alert" className="text-amber-300">{registrationError}</p>}
 
       {/* Filter and Search Controls */}
       <div className="p-3.5 rounded-xl bg-[#0f151e] border border-slate-800 space-y-3 font-mono">
@@ -661,6 +637,8 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                 </button>
                 <button
                   type="submit"
+                  disabled
+                  aria-describedby="asset-registration-unavailable"
                   className="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer shadow-sm"
                 >
                   Register Asset

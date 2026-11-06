@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useSyncExternalStore } from 'react';
 import { SiteScope, Site, Zone } from '../types';
-import { siteService, MOCK_SITES } from '../services/siteService';
+import { siteService } from '../services/siteService';
 
 interface ScopeContextType {
   scope: SiteScope;
@@ -8,7 +8,7 @@ interface ScopeContextType {
   selectSite: (siteId: string | 'all') => void;
   selectZone: (zoneId: string | 'all') => void;
   setSiteScope: (siteId: string | 'all', zoneId?: string | 'all') => void;
-  sites: Site[];
+  sites: readonly Site[];
   currentSite: Site | undefined;
   currentZone: Zone | undefined;
   availableZones: Zone[];
@@ -27,7 +27,7 @@ const ScopeContext = createContext<ScopeContextType | undefined>(undefined);
 
 export const ScopeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [scope, setScopeState] = useState<SiteScope>(defaultScope);
-  const [sites] = useState<Site[]>(MOCK_SITES);
+  const sites = useSyncExternalStore(siteService.subscribeSites, siteService.getSitesSnapshot, siteService.getSitesSnapshot);
 
   const currentSite = sites.find((s) => s.id === scope.siteId);
   const availableZones = currentSite ? currentSite.zones : sites.flatMap((s) => s.zones);
