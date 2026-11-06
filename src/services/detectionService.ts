@@ -1,7 +1,8 @@
 import { Detection, SeverityLevel } from '../types';
 import { MOCK_DETECTIONS } from './mockData';
+import { OperationUnavailableError } from './operationSupport';
 
-let detectionsStore: Detection[] = [...MOCK_DETECTIONS];
+let detectionsStore: Detection[] = MOCK_DETECTIONS.map((item) => ({ ...item, status: 'Disabled' }));
 
 export const detectionService = {
   async getDetections(filters?: {
@@ -42,39 +43,30 @@ export const detectionService = {
   },
 
   async toggleDetectionStatus(id?: string): Promise<Detection | null> {
-    if (!id) return null;
-    const targetId = id.toLowerCase();
-    const idx = detectionsStore.findIndex((d) => d.id?.toLowerCase() === targetId);
-    if (idx !== -1) {
-      const current = detectionsStore[idx].status;
-      detectionsStore[idx] = {
-        ...detectionsStore[idx],
-        status: current === 'Active' ? 'Disabled' : 'Active',
-      };
-      return detectionsStore[idx];
-    }
-    return null;
+    if (!await detectionService.getDetectionById(id)) throw new Error('Detection not found');
+    throw new OperationUnavailableError('Detection deployment');
   },
 
   async createDetection(data: Partial<Detection>): Promise<Detection> {
+    if (!data.name?.trim() || !data.ruleQuery?.trim()) throw new Error('Rule name and logic are required');
     const newDet: Detection = {
-      id: `det-${String(detectionsStore.length + 1).padStart(3, '0')}`,
-      name: data.name || 'Custom Telemetry Detection Rule',
-      description: data.description || 'Custom detection created from event telemetry investigation.',
+      id: `det-${crypto.randomUUID()}`,
+      name: data.name.trim(),
+      description: data.description || 'Locally saved sample definition; not deployed or evaluated.',
       severity: data.severity || 'High',
-      confidence: data.confidence || 85,
+      confidence: 0,
       triggersCount: 0,
-      hostsImpacted: data.hostsImpacted || ['SERVER-42'],
-      lastTriggered: 'Never',
-      status: 'Active',
-      ruleQuery: data.ruleQuery || 'event.code: 7045',
+      hostsImpacted: [],
+      lastTriggered: 'Not evaluated (demo)',
+      status: 'Disabled',
+      ruleQuery: data.ruleQuery.trim(),
       mitreAttack: data.mitreAttack || {
-        id: 'T1543.003',
-        name: 'Windows Service',
-        tactic: 'Persistence',
+        id: 'Unmapped',
+        name: 'Unmapped',
+        tactic: 'Unmapped',
       },
-      evidenceTemplate: data.evidenceTemplate || 'Investigate target process and parent execution tree.',
-      recentMatchEventIds: data.recentMatchEventIds || [],
+      evidenceTemplate: data.evidenceTemplate || 'No sample evidence template configured.',
+      recentMatchEventIds: [],
     };
     detectionsStore = [newDet, ...detectionsStore];
     return newDet;
