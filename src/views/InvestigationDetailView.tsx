@@ -48,7 +48,6 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [activeTab, setActiveTab] = useState<'timeline' | 'graph' | 'evidence' | 'notes'>('timeline');
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const [exportNotification, setExportNotification] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInv = async () => {
@@ -88,35 +87,6 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
     const updated = await investigationService.updateStatus(investigation.id, newStatus);
     if (updated) setInvestigation(updated);
     setStatusMenuOpen(false);
-  };
-
-  const handleExportEvidencePackage = () => {
-    if (!investigation) return;
-    const exportData = {
-      investigationId: investigation.id,
-      title: investigation.title,
-      host: investigation.host,
-      severity: investigation.severity,
-      confidence: investigation.confidence,
-      createdAt: investigation.createdAt,
-      findings: investigation.aiAssistantAssessment.findings,
-      evidencePreserved: evidenceList,
-      timeline: investigation.timeline,
-      notes: investigation.notes,
-      exportHashSha256: '9f81a7b8e21c60d3b4e7a8f09c3e2d1a4b5c6d7e8f90123456789abcdef01234',
-      preservationStandard: 'NIST SP 800-86 Cryptographic Evidence Container',
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Warden_Evidence_Package_${investigation.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    setExportNotification(`Preserved Evidence Container (${investigation.id}) exported with SHA-256 integrity.`);
-    setTimeout(() => setExportNotification(null), 4000);
   };
 
   const handleOpenEvidence = (evidenceId: string) => {
@@ -194,9 +164,10 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
 
           {/* Export Evidence Package */}
           <button
-            onClick={handleExportEvidencePackage}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-300 font-semibold transition-colors cursor-pointer"
-            title="Download cryptographically verifiable evidence dossier"
+            disabled
+            aria-describedby="evidence-export-unavailable"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-semibold cursor-not-allowed"
+            title="Evidence export unavailable: no verified provenance or chain of custody"
           >
             <FileDown size={13} />
             <span>Export Evidence Package</span>
@@ -204,12 +175,9 @@ export const InvestigationDetailView: React.FC<InvestigationDetailViewProps> = (
         </div>
       </div>
 
-      {exportNotification && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-700 text-emerald-300 font-mono text-xs flex items-center gap-2">
-          <CheckCircle2 size={16} className="shrink-0" />
-          <span>{exportNotification}</span>
-        </div>
-      )}
+      <p id="evidence-export-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Evidence export unavailable: sample data has no verified digests, provenance, or chain of custody.
+      </p>
 
       {/* Flagship Two-Column Workspace Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
