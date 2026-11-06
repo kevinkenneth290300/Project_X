@@ -31,32 +31,41 @@ interface EventDetailViewProps {
 }
 
 export const EventDetailView: React.FC<EventDetailViewProps> = ({
-  eventId = 'evt-7045-svc',
+  eventId,
   onNavigate,
   onSelectAgent,
   onSelectInvestigation,
 }) => {
   const [event, setEvent] = useState<EventRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'xml' | 'json' | 'correlation'>('summary');
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [showCreateDetectionModal, setShowCreateDetectionModal] = useState(false);
-  const [addedToInv, setAddedToInv] = useState(false);
   const [correlatedEvents, setCorrelatedEvents] = useState<EventRecord[]>([]);
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setEvent(null);
+    setCorrelatedEvents([]);
+    setLoadError(null);
     const fetchEvent = async () => {
-      setLoading(true);
-      const data = await eventService.getEventById(eventId || 'evt-7045-svc');
-      const currentEvt = data || (await eventService.getEventById('evt-7045-svc'));
-      setEvent(currentEvt);
-      if (currentEvt) {
-        const corr = await eventService.getEvents({ host: currentEvt.host });
-        setCorrelatedEvents(corr.filter((e) => e.id !== currentEvt.id));
+      try {
+        const currentEvent = await eventService.getEventById(eventId);
+        const related = currentEvent ? await eventService.getEvents({ host: currentEvent.host }) : [];
+        if (active) {
+          setEvent(currentEvent);
+          setCorrelatedEvents(related.filter((item) => item.id !== currentEvent?.id));
+        }
+      } catch {
+        if (active) setLoadError('Unable to load the requested event.');
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     };
     fetchEvent();
+    return () => { active = false; };
   }, [eventId]);
 
   const handleCopy = (text: string, type: string) => {
@@ -65,24 +74,16 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
     setTimeout(() => setCopiedType(null), 2000);
   };
 
-  const handleAddToInvestigation = async () => {
-    if (!event) return;
-    await investigationService.addNote(
-      'INV-000142',
-      'Alex Vance',
-      'SOC Senior Analyst',
-      `Attached Event ${event.eventId} (${event.summary}) from ${event.host} to investigation evidence ledger.`
-    );
-    setAddedToInv(true);
-    setTimeout(() => setAddedToInv(false), 3000);
-  };
-
-  if (loading || !event) {
+  if (loading) {
     return (
       <div className="p-8 text-center font-mono text-slate-400">
         Loading event telemetry artifact...
       </div>
     );
+  }
+
+  if (!event) {
+    return <div role="alert" className="p-8 font-mono text-amber-300">{loadError || 'Event not found.'}</div>;
   }
 
   return (
@@ -114,11 +115,12 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
           <button
-            onClick={handleAddToInvestigation}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-amber-950/70 hover:bg-amber-900 border border-amber-700/60 text-amber-300 transition-colors cursor-pointer"
+            disabled
+            aria-describedby="evidence-linking-unavailable"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 cursor-not-allowed"
           >
             <SearchCheck size={13} />
-            <span>{addedToInv ? '✓ Attached to INV-000142' : 'Add to Investigation'}</span>
+            <span>Add to Investigation</span>
           </button>
 
           <button
@@ -130,6 +132,10 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
           </button>
         </div>
       </div>
+
+      <p id="evidence-linking-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Evidence linking unavailable: no authorized case selection or durable evidence workflow exists.
+      </p>
 
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-800 font-mono text-xs">
@@ -216,19 +222,12 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
             </div>
             <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
               <div className="text-slate-400 text-[10px] uppercase">Record Integrity</div>
-              <div className="font-bold text-emerald-400 mt-1">Record ID #{event.recordNumber}</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Hash: sha256 verified</div>
+              <div className="font-bold text-slate-300 mt-1">Record ID: {event.id}</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Digest verification unavailable</div>
             </div>
             <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800">
               <div className="text-slate-400 text-[10px] uppercase">Linked Investigation</div>
-              <div
-                onClick={() => onNavigate('investigation-detail')}
-                className="font-bold text-cyan-400 mt-1 cursor-pointer hover:underline flex items-center gap-1"
-              >
-                <span>INV-000142</span>
-                <ExternalLink size={12} />
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">High Confidence Alert</div>
+              <div className="font-bold text-slate-400 mt-1">Unavailable</div>
             </div>
           </div>
         </div>

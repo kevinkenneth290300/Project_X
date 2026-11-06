@@ -40,7 +40,7 @@ describe('sample evidence safety', () => {
 
   it('cannot download or claim an evidence export', async () => {
     const download = vi.spyOn(HTMLAnchorElement.prototype, 'click');
-    render(<InvestigationDetailView {...navigation} />);
+    render(<InvestigationDetailView investigationId="INV-000142" {...navigation} />);
     const exportButton = await screen.findByRole('button', { name: 'Export Evidence Package' });
     expect(exportButton).toBeDisabled();
     expect(exportButton).toHaveAccessibleDescription(/Evidence export unavailable/);
