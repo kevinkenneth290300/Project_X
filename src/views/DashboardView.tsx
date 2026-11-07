@@ -24,7 +24,6 @@ import { NavigationSection, Agent, Investigation, Site, Detection } from '../typ
 import { agentService } from '../services/agentService';
 import { investigationService } from '../services/investigationService';
 import { detectionService } from '../services/detectionService';
-import { siteService, MOCK_SITES } from '../services/siteService';
 import { useScope } from '../context/ScopeContext';
 
 interface DashboardViewProps {
@@ -38,7 +37,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectAgent,
   onSelectInvestigation,
 }) => {
-  const { scope, sites, setSiteScope } = useScope();
+  const { scope, sites, setSiteScope, dataState } = useScope();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
   const [definitions, setDefinitions] = useState<Detection[]>([]);
@@ -221,7 +220,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onClick={() => onNavigate('sites')}
               className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer"
             >
-              Manage All {sites.length} Sites &rarr;
+              Manage All {dataState.status === 'ready' ? sites.length : '-'} Sites &rarr;
             </button>
           </div>
 

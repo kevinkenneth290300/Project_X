@@ -20,6 +20,7 @@ interface ScopeContextType {
   availableZones: Zone[];
   dataState: DataState<AuthorizedScopeContext>;
   user: AuthorizedScopeContext['user'] | undefined;
+  scopeKey: string;
 }
 
 const defaultScope: SiteScope = {
@@ -97,6 +98,7 @@ export const ScopeProvider: React.FC<{ children: React.ReactNode; authorizedCont
         availableZones,
         dataState,
         user: authorized?.user,
+        scopeKey: JSON.stringify([authorized?.user.id, scope.organizationId, scope.siteId, scope.zoneId, sites.map((site) => [site.id, site.zones.map((zone) => zone.id)])]),
       }}
     >
       {children}
