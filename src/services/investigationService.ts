@@ -46,7 +46,7 @@ export const investigationService = {
   },
 
   async updateStatus(id: string, status: 'Open' | 'Investigating' | 'Resolved' | 'Closed'): Promise<Investigation | null> {
-    if (!id) return null;
+    if (!id) throw new Error('Investigation not found');
     const targetId = id.toLowerCase();
     const idx = investigationsStore.findIndex((i) => i.id?.toLowerCase() === targetId);
     if (idx !== -1) {
@@ -57,72 +57,54 @@ export const investigationService = {
       };
       return investigationsStore[idx];
     }
-    return null;
+    throw new Error('Investigation not found');
   },
 
   async addNote(id: string, author: string, role: string, text: string): Promise<InvestigationNote> {
+    const targetId = id?.toLowerCase();
+    const index = investigationsStore.findIndex((item) => item.id.toLowerCase() === targetId);
+    if (index === -1) throw new Error('Investigation not found');
+    if (!text.trim()) throw new Error('Note text is required');
     const newNote: InvestigationNote = {
-      id: `note-${Date.now()}`,
+      id: `note-${crypto.randomUUID()}`,
       author,
       role,
       timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
-      text,
+      text: text.trim(),
     };
-    if (id) {
-      const targetId = id.toLowerCase();
-      const idx = investigationsStore.findIndex((i) => i.id?.toLowerCase() === targetId);
-      if (idx !== -1) {
-        investigationsStore[idx].notes = [newNote, ...investigationsStore[idx].notes];
-      }
-    }
+    investigationsStore[index] = {
+      ...investigationsStore[index],
+      notes: [newNote, ...investigationsStore[index].notes],
+      updatedAt: newNote.timestamp,
+    };
     return newNote;
   },
 
   async createInvestigation(data: { title: string; host: string; severity: any; description: string }): Promise<Investigation> {
-    const newId = `INV-000${Math.floor(143 + Math.random() * 50)}`;
+    if (!data.title.trim() || !data.host.trim()) throw new Error('Investigation title and host are required');
+    const newId = `INV-${crypto.randomUUID()}`;
     const newInv: Investigation = {
       id: newId,
-      title: data.title,
-      host: data.host,
+      title: data.title.trim(),
+      host: data.host.trim(),
       severity: data.severity || 'High',
-      confidence: 85,
+      confidence: 0,
       status: 'Open',
       createdAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
       updatedAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
-      assignedTo: 'SOC Analyst',
+      assignedTo: 'Unassigned',
       description: data.description,
       aiAssistantAssessment: {
-        summary: `Preliminary automated correlation for host ${data.host}. Telemetry analysis indicates anomalous event chain.`,
-        confidence: 85,
-        findings: [
-          {
-            id: `f-${Date.now()}`,
-            text: 'Triggered security rule matched endpoint behavioral threshold.',
-            evidenceId: 'EVID-001',
-            severity: data.severity || 'High',
-          },
-        ],
+        summary: 'Not analyzed. This is a locally created sample investigation.',
+        confidence: 0,
+        findings: [],
       },
-      timeline: [
-        {
-          time: new Date().toISOString().slice(11, 19),
-          timestamp: new Date().toISOString(),
-          label: 'Investigation Opened',
-          eventId: 7045,
-          eventRecordId: 'evt-7045-svc',
-          severity: data.severity || 'High',
-          detail: `Initial investigation opened for ${data.host}`,
-          evidenceId: 'EVID-001',
-        },
-      ],
-      evidenceIds: ['EVID-001'],
+      timeline: [],
+      evidenceIds: [],
       notes: [],
       graphData: {
-        nodes: [
-          { id: 'n-host', label: data.host, type: 'host' },
-          { id: 'n-event', label: 'Security Trigger', type: 'event' },
-        ],
-        edges: [{ from: 'n-host', to: 'n-event', label: 'Emitted' }],
+        nodes: [{ id: 'n-host', label: data.host.trim(), type: 'host' }],
+        edges: [],
       },
     };
     investigationsStore = [newInv, ...investigationsStore];

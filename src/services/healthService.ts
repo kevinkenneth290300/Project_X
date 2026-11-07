@@ -1,9 +1,12 @@
 import { HealthStatus, SystemHealthComponent } from '../types';
-import { MOCK_SYSTEM_HEALTH } from './mockData';
+import { OperationUnavailableError } from './operationSupport';
 
 export const healthService = {
   async getHealthStatus(): Promise<HealthStatus> {
-    await new Promise((r) => setTimeout(r, 40));
+    throw new OperationUnavailableError('Live system health');
+  },
+
+  async getSampleHealthStatus(): Promise<HealthStatus> {
     return {
       clusterResources: {
         cpuUsage: 28.4,
@@ -14,44 +17,43 @@ export const healthService = {
       components: [
         {
           name: 'Ingestion Pipeline & Binary Parser',
-          status: 'Operational',
-          latency: '12ms',
-          throughput: '12,410 eps',
-          details: 'Node warden-ingest-01 (gRPC / TLS 1.3)',
+          status: 'Unavailable',
+          latency: 'Unavailable',
+          throughput: 'Unavailable',
+          details: 'Sample component; no ingestion backend connected',
         },
         {
           name: 'Syslog Listener Daemon',
-          status: 'Operational',
-          latency: '4ms',
-          throughput: '3,821 eps',
-          details: 'Listening on UDP/514, TCP/514, TCP-TLS/6514',
+          status: 'Unavailable',
+          latency: 'Unavailable',
+          throughput: 'Unavailable',
+          details: 'Sample component; no syslog listener is running in this console',
         },
         {
           name: 'Local Spool Disk Buffer',
-          status: 'Operational',
-          latency: '2ms',
-          throughput: '18.2 GB / 250 GB',
-          details: 'NVMe Ring Buffer (7% utilization)',
+          status: 'Unavailable',
+          latency: 'Unavailable',
+          throughput: 'Unavailable',
+          details: 'Sample component; no local spool measurements available',
         },
         {
           name: 'Database & Indexing Core',
-          status: 'Operational',
-          latency: '45ms',
-          throughput: '99.98% uptime',
-          details: 'Distributed Sharded Index Tier',
+          status: 'Unavailable',
+          latency: 'Unavailable',
+          throughput: 'Unavailable',
+          details: 'Sample component; no database health query performed',
         },
         {
           name: 'TLS Cryptographic Engine',
-          status: 'Operational',
-          latency: '<1ms',
-          throughput: '100% mTLS verified',
-          details: 'Warden Enclave Internal CA G3',
+          status: 'Unavailable',
+          latency: 'Unavailable',
+          throughput: 'Unavailable',
+          details: 'Sample component; no TLS or certificate verification performed',
         },
       ],
     };
   },
   async getSystemComponents(): Promise<SystemHealthComponent[]> {
-    await new Promise((r) => setTimeout(r, 40));
-    return [...MOCK_SYSTEM_HEALTH];
+    throw new OperationUnavailableError('Live system components');
   },
 };

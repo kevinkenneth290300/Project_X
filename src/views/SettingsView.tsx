@@ -26,9 +26,6 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'auth' | 'collector' | 'pki' | 'retention'>('auth');
   const [selectedProvider, setSelectedProvider] = useState<'ldap' | 'saml' | 'oidc' | 'local'>('ldap');
-  const [saved, setSaved] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
 
   // Form states
   const [clusterName, setClusterName] = useState('WARDEN-MASTER-SOC-01');
@@ -59,21 +56,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
     sms: false,
   });
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
-
-  const handleTestConnection = () => {
-    setTestingConnection(true);
-    setTestResult(null);
-    setTimeout(() => {
-      setTestingConnection(false);
-      setTestResult('Success: Secure TLS 1.3 handshake verified. Bind credential validated.');
-    }, 1200);
-  };
-
   return (
     <div className="space-y-4 font-sans text-xs">
       {/* Header */}
@@ -82,29 +64,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-2">
             <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Platform Configuration</h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-300 font-semibold">
-              ENTERPRISE SECURITY &amp; AUTH
+              SAMPLE CONFIGURATION
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Identity federation (LDAP, SAML, OIDC), MFA enforcement, mTLS PKI authority, and collector nodes
+            Sample settings only. Authentication, MFA, TLS validation, and collector configuration deployment are unavailable.
           </p>
         </div>
 
         <button
-          onClick={handleSave}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+          disabled
+          aria-describedby="settings-operations-unavailable"
+          title="Configuration deployment unavailable in this demonstration"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-mono text-xs font-semibold cursor-not-allowed"
         >
           <Save size={13} />
           <span>Save Changes</span>
         </button>
       </div>
 
-      {saved && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-700 text-emerald-300 font-mono text-xs flex items-center gap-2">
-          <CheckCircle2 size={16} className="shrink-0" />
-          <span>Configuration parameters updated and synchronized to all local plant collectors.</span>
-        </div>
-      )}
+      <p id="settings-operations-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Configuration deployment and connection tests are unavailable. Edits are local sample values only; no security controls are enforced.
+      </p>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 font-mono text-xs overflow-x-auto">
@@ -206,7 +187,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                 <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                   Active Directory / LDAP Federation Parameters
                 </span>
-                <span className="text-[10px] text-emerald-400 font-bold">STATUS: ACTIVE</span>
+                <span className="text-[10px] text-amber-300 font-bold">UNAVAILABLE (DEMO)</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -266,20 +247,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
               <div className="flex items-center justify-between pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={handleTestConnection}
-                  disabled={testingConnection}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 hover:border-cyan-500 font-semibold cursor-pointer transition-colors"
+                  disabled
+                  aria-describedby="settings-operations-unavailable"
+                  title="LDAP, TLS handshake, and bind validation are unavailable"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 text-slate-400 border border-slate-700 font-semibold cursor-not-allowed"
                 >
                   <Play size={12} />
-                  <span>{testingConnection ? 'Testing LDAPS Connection...' : 'Test Connection & Bind'}</span>
+                  <span>Test Connection &amp; Bind</span>
                 </button>
-
-                {testResult && (
-                  <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
-                    <Check size={14} />
-                    {testResult}
-                  </span>
-                )}
               </div>
             </div>
           )}
@@ -291,7 +266,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                 <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                   SAML 2.0 Single Sign-On (Okta / PingFederate)
                 </span>
-                <span className="text-[10px] text-cyan-400 font-bold">READY TO DEPLOY</span>
+                <span className="text-[10px] text-amber-300 font-bold">NOT DEPLOYED (DEMO)</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -334,7 +309,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                 <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                   OpenID Connect (Microsoft Entra ID / Google Cloud Identity)
                 </span>
-                <span className="text-[10px] text-cyan-400 font-bold">CONFIGURED</span>
+                <span className="text-[10px] text-amber-300 font-bold">UNAVAILABLE (DEMO)</span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -367,10 +342,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
                 <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                   Break-Glass Emergency Local Accounts
                 </span>
-                <span className="text-[10px] text-amber-400 font-bold">AIR-GAP RESTRICTED</span>
+                <span className="text-[10px] text-amber-300 font-bold">UNAVAILABLE (DEMO)</span>
               </div>
               <p className="text-slate-300 text-xs leading-relaxed">
-                Emergency accounts operate with salted Argon2id hashes stored on local encrypted storage. Used exclusively when external Active Directory or identity federations are unreachable.
+                Local authentication is unavailable. These are sample settings, not protected emergency accounts.
               </p>
             </div>
           )}
@@ -381,7 +356,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
               <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
                 Multi-Factor Authentication (MFA) Policies
               </span>
-              <span className="text-[10px] text-emerald-400 font-bold">ENFORCED FOR ALL ROLES</span>
+              <span className="text-[10px] text-amber-300 font-bold">NOT ENFORCED (DEMO)</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -447,7 +422,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
             </div>
 
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">gRPC Collector Port (TLS 1.3)</label>
+              <label className="block text-[11px] text-slate-400 mb-1">Sample Collector Port (Not Listening)</label>
               <input
                 type="number"
                 value={collectorPort}
@@ -473,15 +448,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onNavigate }) => {
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-800/60">
               <span className="text-slate-400">Fingerprint:</span>
-              <span className="text-slate-300 font-mono text-[11px]">84:A1:7E:2B:9C:14:DF:55:01:42</span>
+              <span className="text-slate-300 font-mono text-[11px]">Unavailable</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-slate-800/60">
               <span className="text-slate-400">Expiration:</span>
-              <span className="text-emerald-400 font-bold">2036-09-02 (3,650 Days)</span>
+              <span className="text-slate-400 font-bold">Unavailable</span>
             </div>
             <div className="flex justify-between py-1.5">
               <span className="text-slate-400">Agent mTLS Validation:</span>
-              <span className="text-emerald-400 font-bold">Strict Client Cert Required</span>
+              <span className="text-amber-300 font-bold">Unavailable (demo)</span>
             </div>
           </div>
         </div>

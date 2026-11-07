@@ -20,8 +20,8 @@ import {
   HardDrive,
   Workflow,
 } from 'lucide-react';
-import { Site, Zone, NavigationSection } from '../types';
-import { siteService, MOCK_SITES } from '../services/siteService';
+import { Site, Zone, NavigationSection, ZONE_TYPES, ZONE_SECURITY_CLASSES } from '../types';
+import { siteService } from '../services/siteService';
 import { useScope } from '../context/ScopeContext';
 
 interface SiteDetailViewProps {
@@ -30,60 +30,43 @@ interface SiteDetailViewProps {
 }
 
 export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
-  siteId = 'chennai',
+  siteId,
   onNavigate,
 }) => {
-  const { selectSite, selectZone } = useScope();
-  const [site, setSite] = useState<Site>(() => {
-    return MOCK_SITES.find((s) => s.id === siteId) || MOCK_SITES[0];
-  });
+  const { selectSite, selectZone, sites } = useScope();
+  const site = sites.find((candidate) => candidate.id === siteId);
   const [showAddZoneModal, setShowAddZoneModal] = useState(false);
-  const [newZoneData, setNewZoneData] = useState({
+  const [zoneCreationError, setZoneCreationError] = useState<string | null>(null);
+  const [newZoneData, setNewZoneData] = useState<{
+    name: string;
+    description: string;
+    zoneType: Zone['zoneType'];
+    purdueLevel: string;
+    securityClassification: Zone['securityClassification'];
+    networkRanges: string;
+  }>({
     name: '',
     description: '',
-    zoneType: 'Cell Control Zone' as const,
-    purdueLevel: 'Level 2' as const,
-    securityClassification: 'Restricted OT' as const,
-    networkRanges: '10.10.30.0/24',
+    zoneType: 'Control Zone',
+    purdueLevel: 'Level 2',
+    securityClassification: 'High Security',
+    networkRanges: '',
   });
 
-  const handleAddZone = (e: React.FormEvent) => {
+  const handleAddZone = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newZoneData.name) return;
-    const newZone: Zone = {
-      id: `${site.code.toLowerCase()}-${newZoneData.name.toLowerCase().replace(/\s+/g, '-')}`,
-      siteId: site.id,
-      siteName: site.name,
-      name: newZoneData.name,
-      description: newZoneData.description || 'Custom defined Purdue model zone.',
-      zoneType: newZoneData.zoneType,
-      purdueLevel: newZoneData.purdueLevel,
-      securityClassification: newZoneData.securityClassification,
-      networkRanges: newZoneData.networkRanges.split(',').map((s) => s.trim()),
-      assetCount: 18,
-      networkDevicesCount: 3,
-      eps: 120,
-      status: 'Healthy',
-      telemetrySources: ['Windows Event Log', 'Syslog'],
-      collectionPolicies: ['Production Baseline'],
-      assignedGroups: ['PLC Controllers'],
-    };
-
-    const updatedSite = {
-      ...site,
-      zones: [...site.zones, newZone],
-    };
-    setSite(updatedSite);
-    setShowAddZoneModal(false);
-    setNewZoneData({
-      name: '',
-      description: '',
-      zoneType: 'Cell Control Zone',
-      purdueLevel: 'Level 2',
-      securityClassification: 'Restricted OT',
-      networkRanges: '10.10.30.0/24',
-    });
+    if (!site) return;
+    setZoneCreationError(null);
+    try {
+      await siteService.createZone(site.id, { ...newZoneData, networkRanges: newZoneData.networkRanges.split(',').map((range) => range.trim()).filter(Boolean) });
+      setShowAddZoneModal(false);
+      setNewZoneData({ name: '', description: '', zoneType: 'Control Zone', purdueLevel: 'Level 2', securityClassification: 'High Security', networkRanges: '' });
+    } catch (error) {
+      setZoneCreationError(error instanceof Error ? error.message : 'Unable to create the local sample zone.');
+    }
   };
+
+  if (!site) return <div role="alert" className="p-8 font-mono text-amber-300">Site not found. No other plant has been selected.</div>;
 
   return (
     <div className="space-y-4 font-sans text-xs">
@@ -105,7 +88,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {site.status}
+                Sample: {site.status}
               </span>
             </div>
             <div className="text-slate-400 text-xs mt-0.5">{site.location} • {site.organization}</div>
@@ -123,14 +106,16 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
             Focus Dashboard on this Site
           </button>
           <button
-            onClick={() => setShowAddZoneModal(true)}
+            onClick={() => { setZoneCreationError(null); setShowAddZoneModal(true); }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors"
           >
             <Plus size={14} />
-            <span>Create OT Zone</span>
+            <span>Create Local Sample Zone</span>
           </button>
         </div>
       </div>
+
+      <p role="status" className="text-amber-300 font-mono text-xs">Local sample site and zone records only; shared within this browser session, lost on refresh. No collector, telemetry, certificate, or security policy is provisioned.</p>
 
       {/* High-Level Site Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2.5 font-mono">
@@ -143,7 +128,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800 shadow-sm">
           <div className="text-[10px] text-slate-400 uppercase">Windows Agents</div>
           <div className="text-xl font-bold text-slate-100 mt-0.5">{site.agentsCount}</div>
-          <div className="text-[9px] text-emerald-400 mt-0.5">238 Healthy • 2 Warning</div>
+          <div className="text-[9px] text-slate-400 mt-0.5">Sample inventory; live health unavailable</div>
         </div>
 
         <div className="p-3 rounded-lg bg-[#0f151e] border border-slate-800 shadow-sm">
@@ -182,7 +167,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
           </div>
           <div className="flex items-center gap-3 text-[11px]">
             <span className="text-slate-400">
-              Collector: <strong className="text-slate-200">{site.collectorEndpoint}</strong>
+              Collector: <strong className="text-slate-200">{site.collectorEndpoint || 'Not configured'}</strong>
             </span>
             <span className="text-slate-400">
               Cert: <strong className="text-emerald-400">{site.certStatus}</strong>
@@ -417,7 +402,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
             <Activity size={14} />
           </div>
           <div className="text-[10px] text-slate-400 mt-1">
-            Real-time {site.eps} EPS telemetry logs
+            Sample event records; live telemetry unavailable
           </div>
         </button>
 
@@ -441,11 +426,11 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
       {/* Add Custom Zone Modal */}
       {showAddZoneModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-[#0f151e] border border-slate-800 shadow-2xl p-5 text-slate-200 text-xs space-y-4 font-sans">
+          <div role="dialog" aria-modal="true" aria-labelledby="local-zone-title" className="w-full max-w-md rounded-lg bg-[#0f151e] border border-slate-800 shadow-2xl p-5 text-slate-200 text-xs space-y-4 font-sans">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 font-mono">
               <div className="flex items-center gap-2">
                 <Layers size={16} className="text-amber-400" />
-                <span className="text-sm font-bold text-slate-100">Create Purdue OT/IT Zone</span>
+                <span id="local-zone-title" className="text-sm font-bold text-slate-100">Create Local Sample Zone</span>
               </div>
               <button
                 onClick={() => setShowAddZoneModal(false)}
@@ -455,11 +440,15 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
               </button>
             </div>
 
+            <p role="status" className="text-amber-300">Sample zone definition only; no network discovery, collection, or security enforcement.</p>
+            {zoneCreationError && <p role="alert" className="text-amber-300">{zoneCreationError}</p>}
+
             <form onSubmit={handleAddZone} className="space-y-3 font-mono">
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1">Zone Name *</label>
                 <input
                   type="text"
+                  aria-label="Sample zone name"
                   required
                   placeholder="e.g., Battery Stacking Cell Zone"
                   value={newZoneData.name}
@@ -468,12 +457,19 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                 />
               </div>
 
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Sample Zone Type</label>
+                <select aria-label="Sample zone type" value={newZoneData.zoneType} onChange={(event) => setNewZoneData({ ...newZoneData, zoneType: event.target.value as Zone['zoneType'] })} className="w-full px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs">
+                  {ZONE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] text-slate-400 mb-1">Purdue Level</label>
                   <select
                     value={newZoneData.purdueLevel}
-                    onChange={(e: any) => setNewZoneData({ ...newZoneData, purdueLevel: e.target.value })}
+                    onChange={(event) => setNewZoneData({ ...newZoneData, purdueLevel: event.target.value })}
                     className="w-full px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:border-cyan-500 focus:outline-none cursor-pointer"
                   >
                     <option value="Level 4/5">Level 4/5 (Enterprise IT)</option>
@@ -489,16 +485,12 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                   <label className="block text-[11px] text-slate-400 mb-1">Security Class</label>
                   <select
                     value={newZoneData.securityClassification}
-                    onChange={(e: any) =>
-                      setNewZoneData({ ...newZoneData, securityClassification: e.target.value })
+                    onChange={(event) =>
+                      setNewZoneData({ ...newZoneData, securityClassification: event.target.value as Zone['securityClassification'] })
                     }
                     className="w-full px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-100 text-xs focus:border-cyan-500 focus:outline-none cursor-pointer"
                   >
-                    <option value="Enterprise Standard">Enterprise Standard</option>
-                    <option value="DMZ Isolation">DMZ Isolation</option>
-                    <option value="High Security">High Security</option>
-                    <option value="Restricted OT">Restricted OT</option>
-                    <option value="Critical Safety">Critical Safety</option>
+                    {ZONE_SECURITY_CLASSES.map((classification) => <option key={classification} value={classification}>{classification}</option>)}
                   </select>
                 </div>
               </div>
@@ -507,7 +499,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                 <label className="block text-[11px] text-slate-400 mb-1">Network CIDR Ranges (comma-separated)</label>
                 <input
                   type="text"
-                  required
+                  aria-label="Sample network ranges"
                   placeholder="e.g., 10.10.30.0/24, 10.10.31.0/24"
                   value={newZoneData.networkRanges}
                   onChange={(e) => setNewZoneData({ ...newZoneData, networkRanges: e.target.value })}
@@ -538,7 +530,7 @@ export const SiteDetailView: React.FC<SiteDetailViewProps> = ({
                   type="submit"
                   className="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer shadow-sm"
                 >
-                  Create Zone
+                  Save Local Zone
                 </button>
               </div>
             </form>

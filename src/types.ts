@@ -238,17 +238,14 @@ export interface SiteScope {
   zoneName: string;
 }
 
-export type ZoneType =
-  | 'Enterprise IT'
-  | 'OT DMZ'
-  | 'Manufacturing Zone'
-  | 'Control Zone'
-  | 'Safety Zone'
-  | 'SCADA'
-  | 'Engineering'
-  | 'Historian'
-  | 'PLC Network'
-  | 'Cell/Area Zone';
+export const ZONE_TYPES = [
+  'Enterprise IT', 'OT DMZ', 'Manufacturing Zone', 'Control Zone', 'Safety Zone',
+  'SCADA', 'Engineering', 'Historian', 'PLC Network', 'Cell/Area Zone',
+] as const;
+
+export type ZoneType = typeof ZONE_TYPES[number];
+
+export const ZONE_SECURITY_CLASSES = ['Critical Restricted', 'High Security', 'Monitored Internal', 'Enterprise Standard'] as const;
 
 export interface Zone {
   id: string;
@@ -258,7 +255,7 @@ export interface Zone {
   description: string;
   zoneType: ZoneType;
   purdueLevel: string;
-  securityClassification: 'Critical Restricted' | 'High Security' | 'Monitored Internal' | 'Enterprise Standard';
+  securityClassification: typeof ZONE_SECURITY_CLASSES[number];
   parentZoneId?: string;
   networkRanges: string[];
   assetCount: number;
@@ -277,7 +274,7 @@ export interface Site {
   organization: string;
   status: StatusLevel;
   location: string;
-  healthScore: number;
+  healthScore: number | null;
   assetsCount: number;
   agentsCount: number;
   zonesCount?: number;
@@ -288,9 +285,9 @@ export interface Site {
   activeInvestigations: number;
   lastTelemetry: string;
   lastTelemetrySecondsAgo: number;
-  connectivity: 'Connected / Online' | 'High Latency' | 'Intermittent' | 'Offline';
-  certStatus: 'Valid / TLS 1.3 Active' | 'Expiring Soon' | 'Untrusted';
-  configSync: 'Synchronized (v0.1.0)' | 'Pending Update' | 'Out of Sync';
+  connectivity: 'Connected / Online' | 'High Latency' | 'Intermittent' | 'Offline' | 'Unavailable';
+  certStatus: 'Valid / TLS 1.3 Active' | 'Expiring Soon' | 'Untrusted' | 'Unavailable';
+  configSync: 'Synchronized (v0.1.0)' | 'Pending Update' | 'Out of Sync' | 'Unavailable';
   description: string;
   zones: Zone[];
   collectorEndpoint: string;
@@ -582,7 +579,7 @@ export interface SyslogListener {
   id: string;
   protocol: 'UDP' | 'TCP' | 'TCP TLS';
   port: number;
-  status: 'Active' | 'Listening' | 'Warning' | 'Disabled';
+  status: 'Active' | 'Listening' | 'Warning' | 'Disabled' | 'Unavailable';
   messagesPerSec: number;
   connectedSources: number;
   tlsCertExpiry?: string;
@@ -646,7 +643,7 @@ export interface HealthStatus {
   };
   components: {
     name: string;
-    status: 'Healthy' | 'Warning' | 'Degraded' | 'Operational';
+    status: 'Healthy' | 'Warning' | 'Degraded' | 'Operational' | 'Unavailable';
     latency: string;
     throughput: string;
     details: string;

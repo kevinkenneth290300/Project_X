@@ -16,7 +16,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Site, NavigationSection } from '../types';
-import { siteService, MOCK_SITES } from '../services/siteService';
+import { siteService } from '../services/siteService';
+import { StatusBadge } from '../components/status/StatusBadge';
 import { useScope } from '../context/ScopeContext';
 
 interface SitesViewProps {
@@ -25,11 +26,11 @@ interface SitesViewProps {
 }
 
 export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }) => {
-  const { selectSite } = useScope();
-  const [sites, setSites] = useState<Site[]>(MOCK_SITES);
+  const { selectSite, sites, scope } = useScope();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Healthy' | 'Warning' | 'Offline'>('All');
   const [showProvisionModal, setShowProvisionModal] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
   const [newSiteData, setNewSiteData] = useState({
     name: '',
     code: '',
@@ -53,99 +54,18 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
 
   const handleProvisionSite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSiteData.name) return;
-    const newSite: Site = {
-      id: newSiteData.name.toLowerCase().replace(/\s+/g, '-'),
-      name: newSiteData.name,
-      code: newSiteData.code.toUpperCase() || 'PLANT-NEW',
-      organization: 'Acme Manufacturing',
-      status: 'Healthy',
-      location: newSiteData.location || 'Industrial Facility',
-      healthScore: 100.0,
-      assetsCount: 120,
-      agentsCount: 24,
-      networkDevicesCount: 12,
-      syslogSourcesCount: 8,
-      eps: 450,
-      activeDetections: 0,
-      activeInvestigations: 0,
-      lastTelemetry: 'Just now',
-      lastTelemetrySecondsAgo: 1,
-      connectivity: 'Connected / Online',
-      certStatus: 'Valid / TLS 1.3 Active',
-      configSync: 'Synchronized (v0.1.0)',
-      description: newSiteData.description || 'Newly provisioned manufacturing site.',
-      collectorEndpoint: `collector-${newSiteData.code.toLowerCase()}.acme.internal:8443`,
-      zones: [
-        {
-          id: `${newSiteData.code.toLowerCase()}-ent-it`,
-          siteId: newSiteData.name.toLowerCase().replace(/\s+/g, '-'),
-          siteName: newSiteData.name,
-          name: 'Enterprise IT',
-          description: 'Plant management and office network',
-          zoneType: 'Enterprise IT',
-          purdueLevel: 'Level 4/5',
-          securityClassification: 'Enterprise Standard',
-          networkRanges: ['10.50.1.0/24'],
-          assetCount: 40,
-          networkDevicesCount: 4,
-          eps: 150,
-          status: 'Healthy',
-          telemetrySources: ['Windows Event Log'],
-          collectionPolicies: ['Workstation Baseline'],
-          assignedGroups: ['Domain Controllers'],
-        },
-        {
-          id: `${newSiteData.code.toLowerCase()}-mfg`,
-          siteId: newSiteData.name.toLowerCase().replace(/\s+/g, '-'),
-          siteName: newSiteData.name,
-          name: 'Manufacturing Zone',
-          description: 'Production line machinery',
-          zoneType: 'Manufacturing Zone',
-          purdueLevel: 'Level 3',
-          securityClassification: 'High Security',
-          networkRanges: ['10.50.10.0/24'],
-          assetCount: 80,
-          networkDevicesCount: 8,
-          eps: 300,
-          status: 'Healthy',
-          telemetrySources: ['Windows Event Log', 'Syslog'],
-          collectionPolicies: ['Production Baseline'],
-          assignedGroups: ['SCADA Servers'],
-        },
-      ],
-    };
-    setSites([...sites, newSite]);
-    setShowProvisionModal(false);
-    setNewSiteData({ name: '', code: '', location: '', description: '' });
+    setCreationError(null);
+    try {
+      siteService.createLocalSite(newSiteData, scope.organizationName);
+      setShowProvisionModal(false);
+      setNewSiteData({ name: '', code: '', location: '', description: '' });
+    } catch (error) {
+      setCreationError(error instanceof Error ? error.message : 'Unable to create the local sample site.');
+    }
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Healthy':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            Healthy
-          </span>
-        );
-      case 'Warning':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-950/60 border border-amber-800/40 text-amber-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Warning
-          </span>
-        );
-      case 'Offline':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-950/60 border border-rose-800/40 text-rose-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-            Offline
-          </span>
-        );
-      default:
-        return null;
-    }
+    return <StatusBadge status={`Sample: ${status}`} size="sm" showPulse={false} />;
   };
 
   return (
@@ -165,11 +85,11 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
         </div>
 
         <button
-          onClick={() => setShowProvisionModal(true)}
+          onClick={() => { setCreationError(null); setShowProvisionModal(true); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm transition-colors self-start sm:self-auto"
         >
           <Plus size={14} />
-          <span>Provision Plant Site</span>
+          <span>Create Local Sample Site</span>
         </button>
       </div>
 
@@ -284,7 +204,7 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
                 <div className="flex flex-col items-end gap-1">
                   {getStatusBadge(site.status)}
                   <span className="text-[10px] font-mono text-slate-400">
-                    Health: <strong className="text-slate-200">{site.healthScore}%</strong>
+                    Sample health: <strong className="text-slate-200">{site.healthScore === null ? 'Unavailable' : `${site.healthScore}%`}</strong>
                   </span>
                 </div>
               </div>
@@ -343,7 +263,7 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
             {/* Card Footer Actions */}
             <div className="flex items-center justify-between pt-3.5 mt-3.5 border-t border-slate-800/80 font-mono text-xs">
               <div className="text-[10px] text-slate-400">
-                Collector: <span className="text-slate-300">{site.collectorEndpoint}</span>
+                Collector: <span className="text-slate-300">{site.collectorEndpoint || 'Not configured'}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -375,11 +295,11 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
       {/* Provision Site Modal */}
       {showProvisionModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-[#0f151e] border border-slate-800 shadow-2xl p-5 text-slate-200 text-xs space-y-4 font-sans">
+          <div role="dialog" aria-modal="true" aria-labelledby="local-site-title" aria-describedby="local-site-limits" className="w-full max-w-lg rounded-lg bg-[#0f151e] border border-slate-800 shadow-2xl p-5 text-slate-200 text-xs space-y-4 font-sans">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 font-mono">
               <div className="flex items-center gap-2">
                 <Building2 size={16} className="text-cyan-400" />
-                <span className="text-sm font-bold text-slate-100">Provision Industrial Plant Site</span>
+                <span id="local-site-title" className="text-sm font-bold text-slate-100">Create Local Sample Site</span>
               </div>
               <button
                 onClick={() => setShowProvisionModal(false)}
@@ -389,11 +309,15 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
               </button>
             </div>
 
+            <p id="local-site-limits" role="status" className="text-amber-300">Local sample only. Records are shared within this browser session and lost on refresh; no site, collector, certificate, or security policy is provisioned.</p>
+            {creationError && <p role="alert" className="text-amber-300">{creationError}</p>}
+
             <form onSubmit={handleProvisionSite} className="space-y-3 font-mono">
               <div>
                 <label className="block text-[11px] text-slate-400 mb-1">Plant / Site Name *</label>
                 <input
                   type="text"
+                  aria-label="Sample site name"
                   required
                   placeholder="e.g., Ahmedabad Battery Plant"
                   value={newSiteData.name}
@@ -407,6 +331,7 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
                   <label className="block text-[11px] text-slate-400 mb-1">Site Code *</label>
                   <input
                     type="text"
+                    aria-label="Sample site code"
                     required
                     placeholder="e.g., AHM-PLANT-05"
                     value={newSiteData.code}
@@ -440,10 +365,10 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
               <div className="p-3 rounded-lg bg-cyan-950/40 border border-cyan-800/40 text-[11px] text-cyan-300 space-y-1">
                 <div className="font-bold flex items-center gap-1.5">
                   <Shield size={13} />
-                  Automatic Zone Bootstrapping
+                  No Automatic Provisioning
                 </div>
                 <p className="text-slate-300 text-[10px]">
-                  Warden will automatically initialize Enterprise IT (Level 4/5) and Manufacturing Zone (Level 3) with TLS 1.3 mTLS collector certificates.
+                  New sample sites start with no zones or inventory and with unavailable health/connectivity. No endpoint or TLS certificate is created.
                 </p>
               </div>
 
@@ -459,7 +384,7 @@ export const SitesView: React.FC<SitesViewProps> = ({ onNavigate, onSelectSite }
                   type="submit"
                   className="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold cursor-pointer shadow-sm"
                 >
-                  Provision Site
+                  Save Local Site
                 </button>
               </div>
             </form>

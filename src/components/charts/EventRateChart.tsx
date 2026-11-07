@@ -71,17 +71,16 @@ export const EventRateChart: React.FC<EventRateChartProps> = ({
 
   return (
     <div className="w-full flex flex-col justify-between select-none">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-4 text-[11px] text-[#5A5A5E] font-mono">
-          <span>EPS: 1,420</span>
-          <span>LATENCY: 12ms</span>
-          <span>ACTIVE HOSTS: 184</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#8E9299] font-mono">
+          <span>Static sample illustration</span>
+          <span>Live latency unavailable</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-mono font-semibold text-white">{activePoint.value.toLocaleString()} / min</span>
+          <span className="text-sm font-mono font-semibold text-white">Sample: {activePoint.value.toLocaleString()} / min</span>
           <span className="text-[10px] font-mono text-[#27AE60] flex items-center bg-[#27AE60]/10 px-1.5 py-0.5 rounded-sm border border-[#27AE60]/30">
             <ArrowUpRight size={11} className="mr-0.5" />
-            {trend}
+            Sample {trend}
           </span>
         </div>
       </div>
@@ -151,9 +150,9 @@ export const EventRateChart: React.FC<EventRateChartProps> = ({
 
         {/* Legend axis */}
         <div className="flex justify-between px-2 pt-1.5 text-[10px] font-mono text-[#5A5A5E]">
-          <span>-24m ({points[0].time})</span>
-          <span>-12m ({points[11].time})</span>
-          <span className="text-[#E64848]">Now ({points[points.length - 1].time})</span>
+          <span>Sample {points[0].time}</span>
+          <span>Sample {points[11].time}</span>
+          <span className="text-[#E64848]">Sample {points[points.length - 1].time}</span>
         </div>
       </div>
     </div>

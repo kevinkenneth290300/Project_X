@@ -20,13 +20,6 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ onNavigate }) => {
   const [retentionDays, setRetentionDays] = useState(90);
   const [spoolDiskMaxGb, setSpoolDiskMaxGb] = useState(250);
   const [enforceMtls, setEnforceMtls] = useState(true);
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
 
   return (
     <div className="space-y-4 font-sans text-xs">
@@ -34,31 +27,29 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ onNavigate }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Security &amp; Retention Policies</h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 text-emerald-300 font-semibold">
-              AIR-GAP ENCLAVE COMPLIANCE
+            <h1 className="font-mono text-lg font-bold text-slate-100 tracking-tight">Sample Security &amp; Retention Preferences</h1>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/40 text-amber-300 font-semibold">
+              NOT ENFORCED
             </span>
           </div>
           <p className="text-slate-400 text-xs mt-0.5">
-            Cryptographic transport controls, local buffer retention rules, and restricted network egress policies
+            Local sample preferences only. No transport, retention, egress, or air-gap policy is applied.
           </p>
         </div>
 
         <button
-          onClick={handleSave}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-semibold cursor-pointer shadow-sm"
+          disabled
+          aria-describedby="policy-deployment-unavailable"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-slate-900 border border-slate-700 text-slate-400 font-mono text-xs font-semibold cursor-not-allowed"
         >
           <Save size={13} />
           <span>Apply Policies</span>
         </button>
       </div>
 
-      {saved && (
-        <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-700 text-emerald-300 font-mono text-xs flex items-center gap-2">
-          <CheckCircle2 size={16} className="shrink-0" />
-          <span>Policies synchronized with fleet control plane.</span>
-        </div>
-      )}
+      <p id="policy-deployment-unavailable" role="status" className="text-amber-300 font-mono text-xs">
+        Policy deployment and synchronization are unavailable. Air-gap and mTLS preferences are local samples, not enforced security controls.
+      </p>
 
       {/* Policy Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono">
@@ -74,13 +65,14 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ onNavigate }) => {
           <div className="space-y-3">
             <div className="flex items-center justify-between p-2.5 rounded bg-[#0b1017] border border-slate-800">
               <div>
-                <div className="font-bold text-slate-200 text-xs">Strict Air-Gapped Mode</div>
+                <div className="font-bold text-slate-200 text-xs">Sample Air-Gap Preference</div>
                 <div className="text-[11px] text-slate-400 font-sans">
-                  Block all outbound external cloud calls; operate strictly within on-premises enclaves.
+                  Egress isolation is not enforced by this sample preference.
                 </div>
               </div>
               <input
                 type="checkbox"
+                aria-label="Sample Air-Gap Preference"
                 checked={airGappedMode}
                 onChange={(e) => setAirGappedMode(e.target.checked)}
                 className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-cyan-600 focus:ring-0"
@@ -89,13 +81,14 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ onNavigate }) => {
 
             <div className="flex items-center justify-between p-2.5 rounded bg-[#0b1017] border border-slate-800">
               <div>
-                <div className="font-bold text-slate-200 text-xs">Enforce Mutual TLS (mTLS 1.3)</div>
+                <div className="font-bold text-slate-200 text-xs">Sample Mutual TLS Preference</div>
                 <div className="text-[11px] text-slate-400 font-sans">
-                  Require agent X.509 client certificate authentication for all gRPC connections.
+                  No certificate requirement or TLS policy is deployed from this demonstration.
                 </div>
               </div>
               <input
                 type="checkbox"
+                aria-label="Sample Mutual TLS Preference"
                 checked={enforceMtls}
                 onChange={(e) => setEnforceMtls(e.target.checked)}
                 className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-cyan-600 focus:ring-0"
@@ -130,7 +123,7 @@ export const PoliciesView: React.FC<PoliciesViewProps> = ({ onNavigate }) => {
               />
               <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
                 <span>14 Days (Minimum)</span>
-                <span>365 Days (Full Forensics)</span>
+                <span>365 Days (Sample Only)</span>
               </div>
             </div>
 

@@ -62,7 +62,7 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-mono text-base font-bold text-[#EDEDED] tracking-tight">Sample Evidence</h1>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#102A1C] border border-[#27AE60]/40 text-[#27AE60] font-semibold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#2A2310] border border-[#F2C94C]/40 text-[#F2C94C] font-semibold">
               UNVERIFIED SAMPLE
             </span>
           </div>
@@ -130,19 +130,8 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                   <tr
                     key={item.id}
                     onClick={() => {
-                      if (item.eventRecordId) {
-                        onSelectEvent(item.eventRecordId);
-                      } else if (item.id === 'EVID-001') {
-                        onSelectEvent('evt-4624-rdp');
-                      } else if (item.id === 'EVID-002') {
-                        onSelectEvent('evt-4672-priv');
-                      } else if (item.id === 'EVID-003') {
-                        onSelectEvent('evt-4688-proc');
-                      } else if (item.id === 'EVID-004') {
-                        onSelectEvent('evt-7045-svc');
-                      } else if (item.id === 'EVID-005') {
-                        onSelectEvent('evt-5007-def');
-                      }
+                      if (!item.eventRecordId) return;
+                      onSelectEvent(item.eventRecordId);
                       onNavigate('event-detail');
                     }}
                     className="hover:bg-[#1A1A1D] cursor-pointer transition-colors group"
@@ -163,12 +152,12 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
                       Not calculated
                     </td>
                     <td className="px-3 py-3">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#102A1C] border border-[#27AE60]/40 text-[#27AE60] font-semibold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#2A2310] border border-[#F2C94C]/40 text-[#F2C94C] font-semibold">
                         Unverified
                       </span>
                     </td>
                     <td className="px-3 py-3 text-right text-[#4B88FF] text-[11px] font-semibold group-hover:underline">
-                      Inspect &rarr;
+                      {item.eventRecordId ? 'Inspect' : 'Unavailable'}
                     </td>
                   </tr>
                 );
