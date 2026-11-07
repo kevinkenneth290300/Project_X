@@ -1,4 +1,4 @@
-import { Asset, AssetGroup, NetworkDevice, Site, Zone } from '../../types';
+import { Agent, Asset, AssetGroup, NetworkDevice, Site, Zone } from '../../types';
 
 export function siteFixture(overrides: Partial<Site> = {}): Site {
   return {
@@ -45,5 +45,18 @@ export function networkDeviceFixture(overrides: Partial<NetworkDevice> = {}): Ne
     deviceType: 'Core Switch', vendor: 'Other', model: 'Test model', firmware: 'Test firmware',
     siteId: 'site-test', siteName: 'Provided site', zoneId: 'zone-test', zoneName: 'Provided zone',
     status: 'Unknown', ...overrides,
+  };
+}
+
+export function agentFixture(overrides: Partial<Agent> = {}): Agent {
+  return {
+    id: 'agent-test', hostname: 'Provided host', ip: '198.51.100.12', os: 'Provided OS',
+    profileId: 'profile-test', profileName: 'Provided profile', status: 'Unknown',
+    eventsPerSec: 0, queueSize: 'Unavailable', queueBytes: 0, version: 'Test version',
+    lastSeen: 'Unavailable', lastSeenSecondsAgo: 0, site: 'Provided site', siteId: 'site-test',
+    zone: 'Provided zone', zoneId: 'zone-test', cpuPercent: 0, memoryPercent: 0, diskPercent: 0,
+    uptime: 'Unavailable', delivery: { collected: 0, transmitted: 0, acknowledged: 0, retries: 0, dropped: 0 },
+    collection: { security: true, system: false, application: false, powershell: false, defender: false },
+    investigationMode: false, enrolledAt: 'Unavailable', domain: 'example.invalid', ...overrides,
   };
 }

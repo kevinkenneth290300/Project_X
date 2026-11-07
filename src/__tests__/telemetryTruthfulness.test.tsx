@@ -79,7 +79,7 @@ describe('sample health and unknown live measurements', () => {
   });
 
   it('keeps an empty agent result at zero instead of inventing a healthy fleet', async () => {
-    vi.spyOn(agentService, 'getAgents').mockResolvedValue([]);
+    vi.spyOn(agentService, 'getAgents').mockResolvedValue({ status: 'empty', reason: 'Configured inventory has no agent records.' });
     render(<ScopeProvider><DashboardView onNavigate={vi.fn()} onSelectAgent={vi.fn()} onSelectInvestigation={vi.fn()} /></ScopeProvider>);
     await waitFor(() => expect(screen.getByLabelText('Sample agent record count')).toHaveTextContent(/^0$/));
     expect(screen.getByText('0 Sample Healthy')).toBeInTheDocument();

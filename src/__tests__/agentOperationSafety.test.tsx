@@ -2,33 +2,39 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { agentService } from '../services/agentService';
-import { OperationUnavailableError } from '../services/operationSupport';
 import { EnrollAgentModal } from '../components/dialogs/EnrollAgentModal';
 import { AgentsView } from '../views/AgentsView';
 import { AgentDetailView } from '../views/AgentDetailView';
+import { ScopeProvider } from '../context/ScopeContext';
+import { agentFixture } from '../test/fixtures/inventory';
 
 describe('unavailable remote agent operations', () => {
   it('cannot enroll a fabricated healthy agent or create delivery counters', async () => {
     const before = structuredClone(await agentService.getAgents());
-    await expect(agentService.enrollAgent({ hostname: 'NEW-HOST', ip: '192.0.2.10', site: 'example', os: 'Example OS', profileId: 'profile-baseline' })).rejects.toBeInstanceOf(OperationUnavailableError);
+    await expect(agentService.enrollAgent({ hostname: 'NEW-HOST', ip: '192.0.2.10', site: 'example', os: 'Example OS', profileId: 'profile-test' })).resolves.toMatchObject({ status: 'unavailable' });
     expect(await agentService.getAgents()).toEqual(before);
   });
 
   it('cannot acknowledge restart or change a heartbeat/health result', async () => {
     const before = structuredClone(await agentService.getAgents());
-    await expect(agentService.restartAgent(before[0].id)).rejects.toMatchObject({ code: 'OPERATION_UNAVAILABLE' });
+    const result = await agentService.restartAgent('provided-agent');
+    expect(result).toMatchObject({ status: 'unavailable' });
+    expect(result).not.toHaveProperty('data');
     expect(await agentService.getAgents()).toEqual(before);
   });
 
   it('cannot acknowledge IR-mode deployment or change a profile', async () => {
     const before = structuredClone(await agentService.getAgents());
-    await expect(agentService.toggleInvestigationMode(before[0].id)).rejects.toMatchObject({ code: 'OPERATION_UNAVAILABLE' });
+    const result = await agentService.toggleInvestigationMode('provided-agent');
+    expect(result).toMatchObject({ status: 'unavailable' });
+    expect(result).not.toHaveProperty('data');
     expect(await agentService.getAgents()).toEqual(before);
   });
 
   it('fails explicitly for missing remote-control targets', async () => {
-    await expect(agentService.restartAgent('missing')).rejects.toThrow('Agent not found');
-    await expect(agentService.toggleInvestigationMode('missing')).rejects.toThrow('Agent not found');
+    await expect(agentService.restartAgent('')).resolves.toMatchObject({ status: 'empty' });
+    await expect(agentService.toggleInvestigationMode('')).resolves.toMatchObject({ status: 'empty' });
+    await expect(agentService.restartAgent('missing')).resolves.toMatchObject({ status: 'unavailable' });
   });
 });
 
@@ -52,8 +58,9 @@ describe('agent operation UI integration', () => {
 
   it('cannot initiate enrollment from the sample fleet', async () => {
     const enroll = vi.spyOn(agentService, 'enrollAgent');
-    const [sample] = await agentService.getAgents();
-    render(<AgentsView onNavigate={vi.fn()} onSelectAgent={vi.fn()} />);
+    const sample = agentFixture();
+    vi.spyOn(agentService, 'getAgents').mockResolvedValue({ status: 'ready', data: [sample] });
+    render(<ScopeProvider><AgentsView onNavigate={vi.fn()} onSelectAgent={vi.fn()} /></ScopeProvider>);
     expect(await screen.findByText(sample.hostname)).toBeInTheDocument();
     const button = screen.getByRole('button', { name: 'Enroll Agent' });
     expect(button).toBeDisabled();
@@ -66,15 +73,16 @@ describe('agent operation UI integration', () => {
   it('renders real fixture channel fields and cannot deploy IR or restart an endpoint', async () => {
     const toggle = vi.spyOn(agentService, 'toggleInvestigationMode');
     const restart = vi.spyOn(agentService, 'restartAgent');
-    const [sample] = await agentService.getAgents();
-    render(<AgentDetailView agentId={sample.id} onNavigate={vi.fn()} onSelectEvent={vi.fn()} onSelectInvestigation={vi.fn()} />);
+    const sample = agentFixture();
+    vi.spyOn(agentService, 'getAgentById').mockResolvedValue({ status: 'ready', data: sample });
+    render(<ScopeProvider><AgentDetailView agentId={sample.id} onNavigate={vi.fn()} onSelectEvent={vi.fn()} onSelectInvestigation={vi.fn()} /></ScopeProvider>);
     const deploy = await screen.findByRole('button', { name: 'Deploy Investigation Mode' });
     expect(deploy).toBeDisabled();
-    expect(deploy).toHaveAccessibleDescription(/not connected endpoints/);
+    expect(deploy).toHaveAccessibleDescription(/authorized control plane/);
     fireEvent.click(deploy);
     expect(toggle).not.toHaveBeenCalled();
     expect(restart).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', { name: 'Sample Channels' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Collection Channels' })).toBeInTheDocument();
     expect(screen.queryByText('INVESTIGATION MODE ACTIVE')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Restart/ })).not.toBeInTheDocument();
   });
