@@ -60,6 +60,8 @@ describe('operator safety integration', () => {
     expect(testConnection).not.toHaveBeenCalled();
     expect(toggle).not.toHaveBeenCalled();
     expect(screen.queryByText('Connected')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Unavailable').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('SIEM').length).toBeGreaterThan(0);
     expect(screen.queryByText(/TLS certificate handshake verified|ms latency/)).not.toBeInTheDocument();
   });
 });

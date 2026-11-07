@@ -69,7 +69,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
   }, [scope.siteId, scope.zoneId]);
 
   const filteredAssets = assets.filter((asset) => {
-    if (typeFilter !== 'All' && asset.type !== typeFilter) return false;
+    if (typeFilter !== 'All' && (asset.assetType || asset.type) !== typeFilter) return false;
     if (telemetryFilter !== 'All' && asset.telemetryStatus !== telemetryFilter) return false;
     if (purdueFilter !== 'All' && asset.purdueLevel !== purdueFilter) return false;
     if (searchQuery) {
@@ -77,7 +77,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
       return (
         asset.name.toLowerCase().includes(q) ||
         asset.ip.toLowerCase().includes(q) ||
-        asset.macAddress.toLowerCase().includes(q) ||
+        (asset.mac || asset.macAddress || '').toLowerCase().includes(q) ||
         asset.vendor.toLowerCase().includes(q) ||
         asset.model.toLowerCase().includes(q) ||
         asset.siteName.toLowerCase().includes(q) ||
@@ -291,9 +291,9 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded bg-slate-900 border border-slate-700 flex items-center justify-center shrink-0 text-cyan-400 group-hover:border-cyan-500">
-                        {asset.type.includes('Windows') ? (
+                        {(asset.assetType || asset.type || 'Other').includes('Windows') ? (
                           <Server size={14} />
-                        ) : asset.type.includes('Switch') || asset.type.includes('Firewall') ? (
+                        ) : (asset.assetType || asset.type || 'Other').includes('Switch') || (asset.assetType || asset.type || 'Other').includes('Firewall') ? (
                           <Network size={14} />
                         ) : (
                           <Cpu size={14} />
@@ -336,7 +336,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ onNavigate }) => {
 
                   {/* Alerts */}
                   <td className="py-2.5 px-3 text-center">
-                    {asset.activeDetectionsCount > 0 ? (
+                    {(asset.activeDetectionsCount ?? 0) > 0 ? (
                       <span className="px-1.5 py-0.5 rounded bg-rose-950/80 border border-rose-800 text-rose-400 font-bold text-[10px]">
                         {asset.activeDetectionsCount}
                       </span>
