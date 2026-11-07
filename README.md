@@ -87,6 +87,8 @@ Core data is represented as ready, empty, unconfigured, unavailable, unauthentic
 
 The default header has no organisation, person or inventory scope, and detail routes have no initial entity selection. An authorised display context must come from a future verified server/session path; client selection is not authorization. [Identity/state evidence and limits](docs/remediation/038-core-identity-data-states.md) distinguish this foundation from the remaining runtime-data and authentication work.
 
+Sites, zones and groups no longer initialise from runtime fixtures. With no authorised inventory API, their screens show unconfigured and creation remains unavailable; no browser-only inventory is invented. [Site/group state evidence](docs/remediation/044-site-zone-group-state.md) covers exact IDs, ownership, test-only builders and the remaining inventory work.
+
 ## 📜 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.
