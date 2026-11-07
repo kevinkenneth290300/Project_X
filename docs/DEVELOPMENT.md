@@ -2,6 +2,8 @@
 
 This document provides a comprehensive step-by-step guide for developers contributing to or extending the **Warden Windows Telemetry & Syslog Platform**.
 
+The executable setup is maintained in [the root development guide](../DEVELOPMENT.md). This console is currently a fixture-backed demonstration with unsupported operations explicitly unavailable. Later extension/architecture examples are historical design sketches, not implemented production services or security contracts. See [the issue roadmap](remediation/README.md).
+
 ---
 
 ## Table of Contents
@@ -26,8 +28,8 @@ This document provides a comprehensive step-by-step guide for developers contrib
 
 Before you begin, ensure you have the following tools installed on your development workstation:
 
-- **Node.js**: `v20.x` or higher (LTS recommended)
-- **Package Manager**: `npm` (v9+), `pnpm` (v8+), `yarn` (v1.22+), or `bun` (v1.1+)
+- **Node.js**: Node 24 LTS pinned in [../.node-version](../.node-version) for reproducible local verification. Hosted CI is deferred by the owner.
+- **Package Manager**: npm shipped with that runtime; use the committed npm lockfile. Alternative package-manager lockfiles are not maintained.
 - **Git**: `v2.30+`
 - **Recommended Code Editor**: [Visual Studio Code](https://code.visualstudio.com/)
   - Recommended Extensions:
@@ -42,17 +44,14 @@ Before you begin, ensure you have the following tools installed on your developm
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/your-org/warden-telemetry.git
-cd warden-telemetry
+git clone https://github.com/kevinkenneth290300/Project_X.git
+cd Project_X
 ```
 
 ### Step 2: Install Dependencies
 ```bash
-# Using standard npm
-npm install
-
-# Alternatively using Bun
-bun install
+# Reproducible locked install
+npm ci
 ```
 
 ### Step 3: Launch Local Development Server
@@ -60,7 +59,7 @@ bun install
 npm run dev
 ```
 
-The Vite development server will bind to `0.0.0.0:3000`. Open your browser and navigate to:
+The Vite development server binds to `127.0.0.1:3000` by default. Open:
 ```
 http://localhost:3000
 ```
@@ -69,7 +68,7 @@ http://localhost:3000
 
 ## 3. Environment Configuration
 
-Warden comes pre-configured for instant client-side development. For server-side AI integrations or external APIs:
+No real credentials are required for the demonstration. The following environment example is a historical integration sketch, not a working AI/authentication backend. Never expose secrets to a browser bundle. For optional future server-side integrations:
 
 1. Copy the example environment configuration:
    ```bash
@@ -140,13 +139,13 @@ src/
 
 ## 5. Data Services & State Management
 
-All domain entities are decoupled into asynchronous services located under `src/services/`. This architecture allows effortless migration from local mock telemetry to production REST / GraphQL / WebSocket backends.
+Async service signatures do not establish a production API. Data and unsupported operations are demonstrations; real contracts, validation, tenant/site authorization, durable acceptance, and error handling are required before enabling live behavior.
 
 ### Key Service Patterns:
 - **`agentService.ts`**:
   - `getAgents(filters)`: Query fleet by status, search string, or profile.
   - `getAgentById(id)`: Retrieve specific agent metadata.
-  - `toggleInvestigationMode(id)`: Switch agent between standard and Deep IR telemetry logging.
+  - `toggleInvestigationMode(id)`: Reject unsupported remote deployment; local profile-preview correctness is tracked separately in #12.
 - **`eventService.ts`**:
   - `getEvents(filters)`: Query events with multi-criteria filtering (channel, severity, host, search, event ID).
   - `getEventById(id)`: Retrieve full event record with structured details and XML string.
@@ -282,12 +281,23 @@ Warden follows a strict **Technical SOC Dark** aesthetic designed for 24/7 monit
 Always run validation scripts before opening a pull request:
 
 ```bash
+# Install from the committed lockfile
+npm ci
+
+# Clean only generated artifacts using Node APIs
+npm run clean
+
 # Validate TypeScript type safety
 npm run lint
+
+# Run unit and component/integration regressions
+npm test
 
 # Perform a full production build test
 npm run build
 ```
+
+Hosted CI: not run (owner decision). Record actual local runtime and platform results; do not infer native Linux or production support from a Windows build.
 
 ---
 
