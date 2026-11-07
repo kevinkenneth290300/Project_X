@@ -89,6 +89,8 @@ The default header has no organisation, person or inventory scope, and detail ro
 
 Sites, zones and groups no longer initialise from runtime fixtures. With no authorised inventory API, their screens show unconfigured and creation remains unavailable; no browser-only inventory is invented. [Site/group state evidence](docs/remediation/044-site-zone-group-state.md) covers exact IDs, ownership, test-only builders and the remaining inventory work.
 
+Assets and network devices now use canonical type/MAC fields and unconfigured readers rather than seeded lists. Creation remains unavailable, and invalid aliases or duplicate IDs are explicit errors, not guessed/merged records. [The model and identity note](docs/remediation/044-asset-device-models.md) records supported field boundaries, test evidence and remaining agent/telemetry/backend work.
+
 ## 📜 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.

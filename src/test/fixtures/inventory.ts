@@ -1,4 +1,4 @@
-import { AssetGroup, Site, Zone } from '../../types';
+import { Asset, AssetGroup, NetworkDevice, Site, Zone } from '../../types';
 
 export function siteFixture(overrides: Partial<Site> = {}): Site {
   return {
@@ -26,5 +26,24 @@ export function groupFixture(overrides: Partial<AssetGroup> = {}): AssetGroup {
     id: 'group-test', name: 'Provided group', description: 'Provided group record', type: 'Asset Group',
     siteId: 'site-test', siteName: 'Provided site', zoneId: 'zone-test', zoneName: 'Provided zone',
     memberCount: 0, assetIds: [], ...overrides,
+  };
+}
+
+export function assetFixture(overrides: Partial<Asset> = {}): Asset {
+  return {
+    id: 'asset-test', name: 'Provided asset', ip: '198.51.100.10', mac: '00:11:22:33:44:55',
+    assetType: 'Windows Server', siteId: 'site-test', siteName: 'Provided site',
+    zoneId: 'zone-test', zoneName: 'Provided zone', vendor: 'Test vendor', model: 'Test model',
+    criticality: 'Low', telemetryStatus: 'Unmonitored', lastSeen: 'Unavailable',
+    status: 'Unknown', ...overrides,
+  };
+}
+
+export function networkDeviceFixture(overrides: Partial<NetworkDevice> = {}): NetworkDevice {
+  return {
+    id: 'device-test', name: 'Provided device', ip: '198.51.100.11', mac: '00:11:22:33:44:66',
+    deviceType: 'Core Switch', vendor: 'Other', model: 'Test model', firmware: 'Test firmware',
+    siteId: 'site-test', siteName: 'Provided site', zoneId: 'zone-test', zoneName: 'Provided zone',
+    status: 'Unknown', ...overrides,
   };
 }

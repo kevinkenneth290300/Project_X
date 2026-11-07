@@ -295,35 +295,14 @@ export interface Site {
 
 export type PurdueLevel = 'Level 0' | 'Level 1' | 'Level 2' | 'Level 3' | 'Level 3.5' | 'Level 4/5' | string;
 
-export type AssetType =
-  | 'Windows Server'
-  | 'Windows Workstation'
-  | 'Linux Server'
-  | 'Firewall'
-  | 'Router'
-  | 'Switch'
-  | 'Industrial Switch'
-  | 'PLC'
-  | 'PLC Controller'
-  | 'RTU'
-  | 'RTU / Field Device'
-  | 'HMI'
-  | 'HMI Panel'
-  | 'SCADA Server'
-  | 'SCADA Historian'
-  | 'Historian'
-  | 'Engineering Workstation'
-  | 'Network Appliance'
-  | 'Security Appliance'
-  | 'OT Firewall'
-  | 'Other';
+export const ASSET_TYPES = ['Windows Server', 'Windows Workstation', 'Linux Server', 'Firewall', 'Router', 'Switch', 'Industrial Switch', 'PLC', 'PLC Controller', 'RTU', 'RTU / Field Device', 'HMI', 'HMI Panel', 'SCADA Server', 'SCADA Historian', 'Historian', 'Engineering Workstation', 'Network Appliance', 'Security Appliance', 'OT Firewall', 'Other'] as const;
+export type AssetType = typeof ASSET_TYPES[number];
 
 export interface Asset {
   id: string;
   name: string;
   ip: string;
   mac?: string;
-  macAddress?: string;
   siteId: string;
   siteName: string;
   zoneId: string;
@@ -331,12 +310,10 @@ export interface Asset {
   groupId?: string;
   groupName?: string;
   assetType?: AssetType;
-  type?: AssetType | string;
   purdueLevel?: PurdueLevel;
   vendor: string;
   model: string;
   osFirmware?: string;
-  firmwareOrOs?: string;
   criticality: SeverityLevel | 'Critical' | 'High' | 'Medium' | 'Low';
   riskScore?: number;
   status?: StatusLevel | 'Healthy' | 'Warning' | 'Offline';
@@ -383,13 +360,15 @@ export interface NetworkDeviceInterface {
   utilizationPercent: number;
 }
 
+export const NETWORK_DEVICE_TYPES = ['Core Switch', 'OT Firewall', 'Industrial Switch', 'Boundary Router', 'Security Gateway', 'Switch', 'Firewall', 'Router'] as const;
+export type NetworkDeviceType = typeof NETWORK_DEVICE_TYPES[number];
+
 export interface NetworkDevice {
   id: string;
   name: string;
   hostname?: string;
   ip: string;
   mac?: string;
-  macAddress?: string;
   vendor: 'Cisco' | 'Palo Alto' | 'Siemens' | 'Hirschmann' | 'Fortinet' | 'Moxa' | 'Juniper' | 'Arista' | 'Other' | string;
   model: string;
   firmware?: string;
@@ -397,8 +376,7 @@ export interface NetworkDevice {
   siteName: string;
   zoneId: string;
   zoneName: string;
-  type?: string;
-  deviceType?: 'Core Switch' | 'OT Firewall' | 'Industrial Switch' | 'Boundary Router' | 'Security Gateway';
+  deviceType?: NetworkDeviceType;
   telemetryProtocols?: ('SNMPv2c' | 'SNMPv3' | 'Syslog' | 'NetFlow' | 'IPFIX' | 'sFlow')[];
   portsUp?: number;
   portsTotal?: number;

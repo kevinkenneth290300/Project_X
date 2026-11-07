@@ -39,6 +39,7 @@ Sequential PRs may depend on the preceding unmerged branch. Such PRs must state 
 | M4 - Real data and guided lab | P1 | [#55](https://github.com/kevinkenneth290300/Project_X/issues/55) | [Unused template dependency/middleware removal and module-graph evidence](055-unused-template-scaffolding.md); external-font criterion remains #10 |
 | M4 | P0 | [#38](https://github.com/kevinkenneth290300/Project_X/issues/38) | [Unconfigured identity/scope, null selections, shared data states and stale-response guard](038-core-identity-data-states.md); server context and remaining runtime cleanup separate |
 | M4 | P0 | [#44](https://github.com/kevinkenneth290300/Project_X/issues/44) | [Sites/zones/groups without runtime seeds or volatile creation](044-site-zone-group-state.md); assets/devices and agents follow separately |
+| M4 / M1 | P1 | [#44 / #14](https://github.com/kevinkenneth290300/Project_X/issues/14) | [Canonical asset/device fields and unconfigured inventories](044-asset-device-models.md); agents/telemetry and real API remain separate |
 
 ## Documentation and gates
 
