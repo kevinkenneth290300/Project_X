@@ -30,11 +30,15 @@ npm ci
 ### 2. Environment Configuration
 No environment configuration or real credentials are required for the local demo. Do not put secrets into browser-exposed environment variables or commit environment files. Optional/future backend configuration is not an implemented authentication or AI integration.
 
+Unused AI Studio/cloud-AI template scaffolding has been removed. There is no template secret file to configure. The optional `DISABLE_HMR` development-session setting retains its existing behavior and is not an authentication or production setting.
+
 ### 3. Launch Development Server
 ```bash
 # Starts Vite local development server on http://localhost:3000
 npm run dev
 ```
+
+The default bind is `127.0.0.1`. LAN binding is an explicit opt-in for an authorized isolated development network only, for example `npm run dev -- --host 0.0.0.0`; never expose this development server or management services publicly.
 
 ---
 
@@ -98,6 +102,8 @@ npm run build
 # Portable generated-artifact cleanup; source/data are preserved
 npm run clean
 ```
+
+For dependency audits, `npm run report:modules` records Vite/Rollup module IDs and import edges in a temporary JSON file without writing the production bundle. See [template cleanup evidence and remaining font limits](docs/remediation/055-unused-template-scaffolding.md).
 
 ---
 

@@ -7,6 +7,11 @@ import { SettingsView } from '../views/SettingsView';
 import { IntegrationsView } from '../views/IntegrationsView';
 
 describe('unavailable integration operations', () => {
+  it('does not advertise a fabricated Gemini capability', async () => {
+    const integrations = await integrationService.getIntegrations();
+    expect(integrations.some((integration) => /gemini/i.test(`${integration.id} ${integration.name} ${integration.version}`))).toBe(false);
+  });
+
   it('rejects connection tests without a network request or successful result', async () => {
     const network = vi.spyOn(globalThis, 'fetch');
     const [integration] = await integrationService.getIntegrations();

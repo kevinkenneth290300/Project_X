@@ -79,6 +79,8 @@ npm run clean
 
 Build/development uses Node 24 LTS pinned in [.node-version](.node-version). Run the locked installation, portable cleanup, strict TypeScript, tests, and production build locally. Native Linux execution is not implied by Windows results. Hosted CI: not run (owner decision). See [development](DEVELOPMENT.md) and [deployment limits](DEPLOYMENT.md).
 
+Unused cloud-AI/template packages and middleware have been removed; no AI Studio secret setup is required. Dependency reachability can be checked with `npm run report:modules`. [The cleanup evidence](docs/remediation/055-unused-template-scaffolding.md) records the module graph, local gates, and remaining external-font/runtime-data limits. This does not implement an AI engine or complete the real-data-only cleanup.
+
 ## 📜 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.
