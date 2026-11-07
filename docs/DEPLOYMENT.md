@@ -283,7 +283,7 @@ Because the compiled output in `dist/` is completely static, you can deploy it d
 ## 5. Environment Variables & Secret Management
 
 - **Client-Side Variables (`VITE_*`)**: Variables injected at build time (e.g., `VITE_API_ENDPOINT`). These are public in client bundles.
-- **Server-Side Secrets**: If deploying a full-stack proxy (e.g. `GEMINI_API_KEY`, API tokens), use Secret Management services:
+- **Future Server-Side Secrets**: A separately reviewed backend must keep API credentials server-side using appropriate protected secret storage; the current console has no cloud-AI secret configuration. Possible deployment mechanisms include:
   - **GCP**: Google Secret Manager (`gcloud secrets ...`)
   - **AWS**: AWS Secrets Manager / SSM Parameter Store
   - **Kubernetes**: `Secret` objects mapped as environment variables

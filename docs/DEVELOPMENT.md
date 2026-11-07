@@ -68,21 +68,7 @@ http://localhost:3000
 
 ## 3. Environment Configuration
 
-No real credentials are required for the demonstration. The following environment example is a historical integration sketch, not a working AI/authentication backend. Never expose secrets to a browser bundle. For optional future server-side integrations:
-
-1. Copy the example environment configuration:
-   ```bash
-   cp .env.example .env.local
-   ```
-2. Configure optional environment variables:
-   ```env
-   # .env.local
-   # Optional: Google Gemini API Key for AI-assisted investigation summaries
-   GEMINI_API_KEY=your_gemini_api_key_here
-
-   # Server Port (Default is 3000)
-   PORT=3000
-   ```
+No environment template or cloud-AI credential is required for the current console. Unused template secret guidance was removed; no authentication or AI backend is implemented here. Never expose secrets to a browser bundle. Future server-side configuration belongs to its separately reviewed backend and authentication increments.
 
 > ⚠️ **Security Warning**: Never commit `.env` or `.env.local` files containing live credentials or secret API keys to version control.
 
@@ -298,6 +284,8 @@ npm run build
 ```
 
 Hosted CI: not run (owner decision). Record actual local runtime and platform results; do not infer native Linux or production support from a Windows build.
+
+Use `npm run report:modules` to collect the real Vite/Rollup module graph in a temporary JSON report when checking dependency reachability. The report command does not replace tests or write the production bundle.
 
 ---
 

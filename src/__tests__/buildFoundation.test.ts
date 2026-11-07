@@ -1,9 +1,28 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 import { cleanBuildArtifacts } from '../../scripts/clean.ts';
+
+it('does not declare dormant cloud or animation template dependencies', () => {
+  const manifest: unknown = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
+  for (const dependency of ['@google/genai', 'dotenv', 'motion']) {
+    expect(manifest).not.toHaveProperty(['dependencies', dependency]);
+  }
+});
+
+it('does not ship AI Studio middleware or template secret guidance', () => {
+  const config = readFileSync(join(process.cwd(), 'vite.config.ts'), 'utf8');
+  expect(config).not.toMatch(/aistudio|google3|LINT\.IfChange|LINT\.ThenChange/i);
+  for (const filename of ['.env.example', 'metadata.json']) {
+    const filePath = join(process.cwd(), filename);
+    if (existsSync(filePath)) {
+      expect(readFileSync(filePath, 'utf8')).not.toMatch(/GEMINI_API_KEY|APP_URL|MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API/);
+    }
+  }
+  expect(existsSync(join(process.cwd(), 'public', 'assets', 'aistudio', '.gitignore'))).toBe(false);
+});
 
 it('cleans only known generated artifacts and is safe to repeat outside the project cwd', () => {
   const root = mkdtempSync(join(tmpdir(), 'project-x-clean-'));

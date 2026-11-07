@@ -1966,18 +1966,6 @@ export const MOCK_INTEGRATIONS: Integration[] = [
     version: '3.6.0',
   },
   {
-    id: 'int-gemini',
-    name: 'Gemini Security Engine',
-    category: 'AI',
-    status: 'Connected',
-    lastDelivery: '4 min ago',
-    eventsSent: '48 queries today',
-    description: 'Enterprise LLM backend for contextual attack chain synthesis, MITRE correlation, and log parsing.',
-    endpoint: 'Backend Proxy Gateway (/api/v1/ai/investigate)',
-    tlsEnabled: true,
-    version: 'Gemini 2.5 Flash / Pro',
-  },
-  {
     id: 'int-openai',
     name: 'OpenAI Enterprise Gateway',
     category: 'AI',
