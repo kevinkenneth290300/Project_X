@@ -1,9 +1,13 @@
 import { EventRecord, SeverityLevel } from '../types';
 import { MOCK_EVENTS } from './mockData';
+import { DataState, unconfiguredState } from '../data/dataState';
 
 let eventsStore: EventRecord[] = [...MOCK_EVENTS];
 
 export const eventService = {
+  async getEventsForHost(host: string, _signal?: AbortSignal): Promise<DataState<readonly EventRecord[]>> {
+    return host ? unconfiguredState('No authorized host event source is configured.') : { status: 'empty', reason: 'No host has been selected.' };
+  },
   async getEvents(filters?: {
     search?: string;
     severity?: SeverityLevel | 'All';

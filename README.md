@@ -91,6 +91,8 @@ Sites, zones and groups no longer initialise from runtime fixtures. With no auth
 
 Assets and network devices now use canonical type/MAC fields and unconfigured readers rather than seeded lists. Creation remains unavailable, and invalid aliases or duplicate IDs are explicit errors, not guessed/merged records. [The model and identity note](docs/remediation/044-asset-device-models.md) records supported field boundaries, test evidence and remaining agent/telemetry/backend work.
 
+Agent/host inventory no longer creates seeded hosts or falls back to a fixed agent. Detail navigation and typed host-event reads use the selected host, with no sample event fallback; remote enrollment/control remains unavailable. [Agent/host state evidence](docs/remediation/044-agent-host-data-states.md) records the remaining API, telemetry and main-acceptance limits.
+
 ## 📜 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.

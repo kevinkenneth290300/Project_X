@@ -37,7 +37,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectAgent,
   onSelectInvestigation,
 }) => {
-  const { scope, sites, setSiteScope, dataState } = useScope();
+  const { scope, sites, setSiteScope, dataState, scopeKey } = useScope();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
   const [definitions, setDefinitions] = useState<Detection[]>([]);
@@ -51,12 +51,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       setLoadError(null);
       try {
         const [agentsData, invData, sampleDefinitions] = await Promise.all([
-          agentService.getAgents(scope.siteId, scope.zoneId),
+          agentService.getAgents(scopeKey),
           investigationService.getInvestigations(),
           detectionService.getDetections(),
         ]);
         if (active) {
-          setAgents(agentsData);
+          setAgents(agentsData.status === 'ready' ? [...agentsData.data] : []);
+          if (agentsData.status !== 'ready' && agentsData.status !== 'empty') setLoadError('Agent inventory is not connected. Counts could not be loaded.');
           setInvestigations(invData);
           setDefinitions(sampleDefinitions);
         }
@@ -73,7 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     };
     fetchData();
     return () => { active = false; };
-  }, [scope.siteId, scope.zoneId]);
+  }, [scopeKey]);
 
   const healthyCount = agents.filter((a) => a.status === 'Healthy').length;
   const warningCount = agents.filter((a) => a.status === 'Warning').length;

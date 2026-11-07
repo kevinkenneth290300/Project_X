@@ -63,8 +63,8 @@ it.each(['empty', 'unconfigured', 'unavailable', 'unauthenticated', 'forbidden',
   expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
 });
 
-function DataProbe({ load, dataKey }: { load: DataLoader<string>; dataKey: string }) {
-  const state = useDataState(load, dataKey);
+function DataProbe({ load, dataKey, scopeKey = '' }: { load: DataLoader<string>; dataKey: string; scopeKey?: string }) {
+  const state = useDataState(load, dataKey, scopeKey);
   return <output aria-label="Loaded data">{state.status === 'ready' ? state.data : state.status}</output>;
 }
 
@@ -100,4 +100,18 @@ it('preserves expected denial and sanitizes unexpected loader errors', async () 
   view.rerender(<DataProbe load={failed} dataKey="failed" />);
   await waitFor(() => expect(screen.getByLabelText('Loaded data')).toHaveTextContent('error'));
   expect(screen.queryByText('Private source detail')).not.toBeInTheDocument();
+});
+
+it('retires an old identity response even when the selected entity ID is unchanged', async () => {
+  const responses: Array<(state: DataState<string>) => void> = [];
+  const signals: AbortSignal[] = [];
+  const load: DataLoader<string> = (_key, signal) => { signals.push(signal); return new Promise((resolve) => responses.push(resolve)); };
+  const view = render(<DataProbe load={load} dataKey="same-entity" scopeKey="identity-one" />);
+  await waitFor(() => expect(responses).toHaveLength(1));
+  view.rerender(<DataProbe load={load} dataKey="same-entity" scopeKey="identity-two" />);
+  await waitFor(() => expect(responses).toHaveLength(2));
+  expect(signals[0].aborted).toBe(true);
+  await act(async () => responses[1]({ status: 'ready', data: 'Current identity' }));
+  await act(async () => responses[0]({ status: 'ready', data: 'Stale identity' }));
+  expect(screen.getByLabelText('Loaded data')).toHaveTextContent('Current identity');
 });
