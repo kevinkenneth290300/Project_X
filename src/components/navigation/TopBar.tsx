@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { NavigationSection } from '../../types';
 import { ScopeSelector } from './ScopeSelector';
+import { useScope } from '../../context/ScopeContext';
 
 interface TopBarProps {
   sectionTitle?: string;
@@ -27,6 +28,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenGlobalSearch,
   onNavigate,
 }) => {
+  const { user } = useScope();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -193,22 +195,23 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* User Profile Avatar */}
         <div className="relative">
+          {user ? <>
           <button
+            aria-label={user.name}
             onClick={() => {
               setShowUserMenu(!showUserMenu);
               setShowNotifications(false);
             }}
             className="w-8 h-8 rounded-full bg-[#242426] border border-[#3A3A3C] hover:border-[#E64848] flex items-center justify-center text-[11px] font-bold text-white transition-colors cursor-pointer"
           >
-            JD
+            {user.name.slice(0, 2).toUpperCase()}
           </button>
 
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-56 rounded bg-[#151517] border border-[#242426] shadow-2xl p-2 z-50 text-xs">
               <div className="px-3 py-2 border-b border-[#242426] mb-1">
-                <div className="font-bold text-white">John Doe (JD)</div>
-                <div className="text-[10px] font-mono text-[#8E9299]">j.doe@security.internal</div>
-                <div className="text-[9px] font-mono text-[#27AE60] mt-1">Tier-3 Lead Analyst</div>
+                <div className="font-bold text-white">{user.name}</div>
+                <div className="text-[10px] font-mono text-[#8E9299]">{user.email}</div>
               </div>
               <button
                 onClick={() => {
@@ -239,6 +242,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </button>
             </div>
           )}
+          </> : <span className="text-xs text-[#8E9299]">Not signed in</span>}
         </div>
       </div>
 
