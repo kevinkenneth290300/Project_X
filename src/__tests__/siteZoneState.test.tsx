@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { siteService } from '../services/siteService';
@@ -8,6 +8,12 @@ import { SiteDetailView } from '../views/SiteDetailView';
 import { Zone } from '../types';
 
 const createSite = (name: string, code: string) => siteService.createLocalSite({ name, code, location: 'Sample location', description: 'Local demo record' });
+
+function AuthorizedTestScope({ children }: { children: React.ReactNode }) {
+  const sites = useSyncExternalStore(siteService.subscribeSites, siteService.getSitesSnapshot, siteService.getSitesSnapshot);
+  const context = { organization: { id: 'test-organization', name: 'Test organization' }, user: { id: 'test-operator', name: 'Test operator', email: 'operator@example.invalid' }, sites };
+  return <ScopeProvider authorizedContext={{ status: 'ready', data: context }}>{children}</ScopeProvider>;
+}
 
 describe('shared transient site and zone records', () => {
   it('retrieves distinct new IDs without injecting plant inventory or connectivity', async () => {
@@ -82,7 +88,7 @@ function SiteWorkflow() {
 
 describe('shared site/zone navigation integration', () => {
   it('creates and opens the actual local site across list, detail, and scope consumers', async () => {
-    render(<ScopeProvider><SiteWorkflow /></ScopeProvider>);
+    render(<AuthorizedTestScope><SiteWorkflow /></AuthorizedTestScope>);
     fireEvent.click(screen.getByRole('button', { name: 'Create Local Sample Site' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Sample site name' }), { target: { value: 'UI Sample Plant' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Sample site code' }), { target: { value: 'UI-PLANT' } });
@@ -103,13 +109,13 @@ describe('shared site/zone navigation integration', () => {
   });
 
   it('shows not found for a missing site ID instead of any fixture plant', () => {
-    render(<ScopeProvider><SiteDetailView siteId="missing-site" onNavigate={vi.fn()} /></ScopeProvider>);
+    render(<AuthorizedTestScope><SiteDetailView siteId="missing-site" onNavigate={vi.fn()} /></AuthorizedTestScope>);
     expect(screen.getByRole('alert')).toHaveTextContent('Site not found.');
     expect(screen.queryByRole('heading', { name: 'Chennai Plant' })).not.toBeInTheDocument();
   });
 
   it('updates an already mounted scope consumer when another component creates a site', async () => {
-    render(<ScopeProvider><SiteWorkflow /></ScopeProvider>);
+    render(<AuthorizedTestScope><SiteWorkflow /></AuthorizedTestScope>);
     await act(async () => { createSite('Externally Created Sample', 'EXT-CREATED'); });
     expect(screen.getByLabelText('Shared site names')).toHaveTextContent('Externally Created Sample');
   });

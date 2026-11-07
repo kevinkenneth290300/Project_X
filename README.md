@@ -81,6 +81,12 @@ Build/development uses Node 24 LTS pinned in [.node-version](.node-version). Run
 
 Unused cloud-AI/template packages and middleware have been removed; no AI Studio secret setup is required. Dependency reachability can be checked with `npm run report:modules`. [The cleanup evidence](docs/remediation/055-unused-template-scaffolding.md) records the module graph, local gates, and remaining external-font/runtime-data limits. This does not implement an AI engine or complete the real-data-only cleanup.
 
+## Data states
+
+Core data is represented as ready, empty, unconfigured, unavailable, unauthenticated, forbidden, error or loading. Only ready states carry records; unknown measurements must not become invented zeros. The shared state view and scoped loader announce conditions, cancel obsolete requests and ignore stale responses.
+
+The default header has no organisation, person or inventory scope, and detail routes have no initial entity selection. An authorised display context must come from a future verified server/session path; client selection is not authorization. [Identity/state evidence and limits](docs/remediation/038-core-identity-data-states.md) distinguish this foundation from the remaining runtime-data and authentication work.
+
 ## 📜 License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.

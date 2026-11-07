@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useSyncExternalStore } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { SiteScope, Site, Zone } from '../types';
-import { siteService } from '../services/siteService';
+import { DataState, unconfiguredState } from '../data/dataState';
+
+export interface AuthorizedScopeContext {
+  organization: { id: string; name: string };
+  user: { id: string; name: string; email: string };
+  sites: readonly Site[];
+}
 
 interface ScopeContextType {
   scope: SiteScope;
@@ -12,54 +18,56 @@ interface ScopeContextType {
   currentSite: Site | undefined;
   currentZone: Zone | undefined;
   availableZones: Zone[];
+  dataState: DataState<AuthorizedScopeContext>;
+  user: AuthorizedScopeContext['user'] | undefined;
 }
 
 const defaultScope: SiteScope = {
-  organizationId: 'acme-mfg',
-  organizationName: 'Acme Manufacturing',
+  organizationId: '',
+  organizationName: '',
   siteId: 'all',
-  siteName: 'All Sites (Global Enterprise)',
+  siteName: 'No scope configured',
   zoneId: 'all',
   zoneName: 'All Zones',
 };
 
 const ScopeContext = createContext<ScopeContextType | undefined>(undefined);
 
-export const ScopeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [scope, setScopeState] = useState<SiteScope>(defaultScope);
-  const sites = useSyncExternalStore(siteService.subscribeSites, siteService.getSitesSnapshot, siteService.getSitesSnapshot);
+export const ScopeProvider: React.FC<{ children: React.ReactNode; authorizedContext?: DataState<AuthorizedScopeContext> }> = ({ children, authorizedContext }) => {
+  const dataState = authorizedContext ?? unconfiguredState<AuthorizedScopeContext>('No authenticated scope source is connected.');
+  const authorized = dataState.status === 'ready' ? dataState.data : undefined;
+  const identityKey = JSON.stringify([authorized?.user, authorized?.organization, authorized?.sites.map((site) => [site.id, site.name, site.zones.map((zone) => [zone.id, zone.name])])]);
+  const initialScope = {
+    ...defaultScope,
+    organizationId: authorized?.organization.id ?? '',
+    organizationName: authorized?.organization.name ?? '',
+    siteName: authorized ? 'All Sites' : 'No scope configured',
+  };
+  const [selection, setSelection] = useState({ identityKey, scope: initialScope });
+  const scope = selection.identityKey === identityKey ? selection.scope : initialScope;
+  const sites = authorized?.sites ?? [];
 
   const currentSite = sites.find((s) => s.id === scope.siteId);
   const availableZones = currentSite ? currentSite.zones : sites.flatMap((s) => s.zones);
   const currentZone = availableZones.find((z) => z.id === scope.zoneId);
 
   const setScope = (newScope: Partial<SiteScope>) => {
-    setScopeState((prev) => {
-      const updated = { ...prev, ...newScope };
-      if (newScope.siteId) {
-        if (newScope.siteId === 'all') {
-          updated.siteName = 'All Sites (Global Enterprise)';
-          updated.zoneId = 'all';
-          updated.zoneName = 'All Zones';
-        } else {
-          const site = sites.find((s) => s.id === newScope.siteId);
-          updated.siteName = site?.name || newScope.siteId;
-          // reset zone if site changed
-          if (prev.siteId !== newScope.siteId) {
-            updated.zoneId = 'all';
-            updated.zoneName = 'All Zones';
-          }
-        }
-      }
-      if (newScope.zoneId) {
-        if (newScope.zoneId === 'all') {
-          updated.zoneName = 'All Zones';
-        } else {
-          const zone = availableZones.find((z) => z.id === newScope.zoneId);
-          updated.zoneName = zone?.name || newScope.zoneId;
-        }
-      }
-      return updated;
+    if (!authorized) return;
+    const siteId = newScope.siteId ?? scope.siteId;
+    const site = sites.find((candidate) => candidate.id === siteId);
+    if (siteId !== 'all' && !site) return;
+    const zoneId = newScope.zoneId ?? (siteId !== scope.siteId ? 'all' : scope.zoneId);
+    const zone = site?.zones.find((candidate) => candidate.id === zoneId && candidate.siteId === siteId);
+    if (zoneId !== 'all' && !zone) return;
+    setSelection({
+      identityKey,
+      scope: {
+        ...initialScope,
+        siteId,
+        siteName: site?.name ?? 'All Sites',
+        zoneId,
+        zoneName: zone?.name ?? 'All Zones',
+      },
     });
   };
 
@@ -87,6 +95,8 @@ export const ScopeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentSite,
         currentZone,
         availableZones,
+        dataState,
+        user: authorized?.user,
       }}
     >
       {children}

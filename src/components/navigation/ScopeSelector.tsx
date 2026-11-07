@@ -11,9 +11,10 @@ import {
   Radio,
 } from 'lucide-react';
 import { useScope } from '../../context/ScopeContext';
+import { DataStateView } from '../status/DataStateView';
 
 export const ScopeSelector: React.FC = () => {
-  const { scope, selectSite, selectZone, sites, currentSite, availableZones } = useScope();
+  const { scope, selectSite, selectZone, sites, currentSite, availableZones, dataState } = useScope();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +27,10 @@ export const ScopeSelector: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (dataState.status !== 'ready') {
+    return <DataStateView compact state={dataState} title={dataState.status === 'unconfigured' ? 'No scope configured' : undefined} />;
+  }
 
   const getSiteStatusDot = (status: string) => {
     switch (status) {
@@ -85,7 +90,7 @@ export const ScopeSelector: React.FC = () => {
               </span>
             </div>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700">
-              Acme Manufacturing
+              {scope.organizationName}
             </span>
           </div>
 

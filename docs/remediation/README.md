@@ -37,6 +37,7 @@ Sequential PRs may depend on the preceding unmerged branch. Such PRs must state 
 | M3 - Platform and offline readiness | P2 | [#10](https://github.com/kevinkenneth290300/Project_X/issues/10) | Local fonts and no console font egress |
 | M3 | P2 | [#15](https://github.com/kevinkenneth290300/Project_X/issues/15) | Evidence-backed browser/build/OS support matrix |
 | M4 - Real data and guided lab | P1 | [#55](https://github.com/kevinkenneth290300/Project_X/issues/55) | [Unused template dependency/middleware removal and module-graph evidence](055-unused-template-scaffolding.md); external-font criterion remains #10 |
+| M4 | P0 | [#38](https://github.com/kevinkenneth290300/Project_X/issues/38) | [Unconfigured identity/scope, null selections, shared data states and stale-response guard](038-core-identity-data-states.md); server context and remaining runtime cleanup separate |
 
 ## Documentation and gates
 

@@ -4,6 +4,19 @@ import { Sidebar } from './components/navigation/Sidebar';
 import { TopBar } from './components/navigation/TopBar';
 import { GlobalSearchModal } from './components/dialogs/GlobalSearchModal';
 import { ScopeProvider } from './context/ScopeContext';
+import { DataStateView } from './components/status/DataStateView';
+
+interface NavigationParams {
+  agentId?: string;
+  eventId?: string;
+  invId?: string;
+  profileId?: string;
+  detectionId?: string;
+  siteId?: string;
+  hostFilter?: string;
+  severityFilter?: SeverityLevel | 'All';
+  severity?: SeverityLevel;
+}
 
 // Existing Views
 import { DashboardView } from './views/DashboardView';
@@ -40,18 +53,24 @@ function AppContent() {
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
   // Parameterized drilldown selections
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('SERVER-42');
-  const [selectedEventId, setSelectedEventId] = useState<string>('evt-7045-svc');
-  const [selectedInvId, setSelectedInvId] = useState<string>('INV-000142');
-  const [selectedProfileId, setSelectedProfileId] = useState<string>('profile-baseline');
-  const [selectedDetectionId, setSelectedDetectionId] = useState<string>('det-001');
-  const [selectedSiteId, setSelectedSiteId] = useState<string>('chennai');
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedInvId, setSelectedInvId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedDetectionId, setSelectedDetectionId] = useState<string | null>(null);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
 
   // Navigation Filter Contexts
   const [eventsHostFilter, setEventsHostFilter] = useState<string>('All');
   const [detectionsSeverityFilter, setDetectionsSeverityFilter] = useState<SeverityLevel | 'All'>('All');
 
-  const handleNavigate = (section: NavigationSection, params?: any) => {
+  const handleNavigate = (section: NavigationSection, params?: NavigationParams) => {
+    if (section === 'agent-detail') setSelectedAgentId(params?.agentId ?? null);
+    if (section === 'event-detail') setSelectedEventId(params?.eventId ?? null);
+    if (section === 'investigation-detail') setSelectedInvId(params?.invId ?? null);
+    if (section === 'collection-profile-detail') setSelectedProfileId(params?.profileId ?? null);
+    if (section === 'detection-detail') setSelectedDetectionId(params?.detectionId ?? null);
+    if (section === 'site-detail') setSelectedSiteId(params?.siteId ?? null);
     if (params) {
       if (params.agentId) setSelectedAgentId(params.agentId);
       if (params.eventId) setSelectedEventId(params.eventId);
@@ -66,6 +85,10 @@ function AppContent() {
     setActiveSection(section);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const nothingSelected = (entity: string, section: NavigationSection) => (
+    <DataStateView state={{ status: 'empty', reason: `No ${entity} has been selected.` }} title="Nothing selected" action={{ label: 'Back to list', onClick: () => handleNavigate(section) }} />
+  );
 
   const renderActiveView = () => {
     switch (activeSection) {
@@ -97,7 +120,7 @@ function AppContent() {
         );
 
       case 'site-detail':
-        return <SiteDetailView siteId={selectedSiteId} onNavigate={handleNavigate} />;
+        return selectedSiteId ? <SiteDetailView siteId={selectedSiteId} onNavigate={handleNavigate} /> : nothingSelected('site', 'sites');
 
       case 'groups':
         return <GroupsView onNavigate={handleNavigate} />;
@@ -123,6 +146,7 @@ function AppContent() {
         );
 
       case 'agent-detail':
+        if (!selectedAgentId) return nothingSelected('agent', 'agents');
         return (
           <AgentDetailView
             agentId={selectedAgentId}
@@ -151,6 +175,7 @@ function AppContent() {
         );
 
       case 'event-detail':
+        if (!selectedEventId) return nothingSelected('event', 'events');
         return (
           <EventDetailView
             eventId={selectedEventId}
@@ -178,6 +203,7 @@ function AppContent() {
         );
 
       case 'investigation-detail':
+        if (!selectedInvId) return nothingSelected('investigation', 'investigations');
         return (
           <InvestigationDetailView
             investigationId={selectedInvId}
@@ -220,6 +246,7 @@ function AppContent() {
         );
 
       case 'collection-profile-detail':
+        if (!selectedProfileId) return nothingSelected('profile', 'collection-profiles');
         return (
           <CollectionProfileDetailView
             profileId={selectedProfileId}
@@ -240,6 +267,7 @@ function AppContent() {
         );
 
       case 'detection-detail':
+        if (!selectedDetectionId) return nothingSelected('detection', 'detections');
         return (
           <DetectionDetailView
             detectionId={selectedDetectionId}
