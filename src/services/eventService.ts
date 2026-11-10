@@ -22,7 +22,8 @@ export const eventService = {
       result = result.filter((e) => e.severity === filters.severity);
     }
     if (filters?.siteId && filters.siteId !== 'all') {
-      result = result.filter((e) => e.siteId === filters.siteId || (e.site && e.site.toLowerCase().includes(filters.siteId.toLowerCase())));
+      const siteId = filters.siteId;
+      result = result.filter((event) => event.siteId === siteId || (event.site && event.site.toLowerCase().includes(siteId.toLowerCase())));
     }
     if (filters?.zoneId && filters.zoneId !== 'all') {
       result = result.filter((e) => e.zoneId === filters.zoneId || e.zone === filters.zoneId);

@@ -1,12 +1,26 @@
 # Warden — Production Deployment Guide
 
-This document outlines the requirements, containerization strategies, network architecture, and security hardening procedures for deploying the Warden Enterprise OT/ICS Telemetry Platform in production and mission-critical manufacturing facilities.
+The repository currently builds a demonstration console, not a production or mission-critical telemetry platform. Building a production-optimized static bundle does not establish live collection, authentication, authorization, durable evidence, or industrial deployment readiness. Do not deploy the demonstration as a security control.
+
+Use Node 24 LTS pinned in [.node-version](.node-version) and the committed [package-lock.json](package-lock.json):
+
+```sh
+npm ci
+npm run lint
+npm test
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173
+```
+
+The preview command is local validation, not a hardened server. Static output is in `dist/`; `npm run clean` removes generated output without deleting source or data. Windows PowerShell can use `npm.cmd`. Install/type/test/build gates are verified locally; native Linux execution must be reported separately. Hosted CI: not run (owner decision). See [development setup](DEVELOPMENT.md), [quality foundation](docs/remediation/011-reproducible-quality-gates.md), and [the stabilization roadmap](docs/remediation/README.md).
+
+The architecture/container/Kubernetes material below is an unvalidated historical design sketch, not evidence that these components or packaging files exist. Real collector integration is tracked in #18 through #21. Air-gap network enforcement and platform support require separate validation; the UI preferences do not implement them.
 
 ---
 
 ## 🏗️ Production Architecture Overview
 
-Warden supports both **Central Cloud/HQ Deployments** and **Air-Gapped / Isolated OT Edge Deployments**:
+The intended future architecture considers central and isolated deployments; neither is certified by this prototype:
 
 ```
 [ Plant OT Network / Direct Control (Level 1-2) ]
@@ -32,7 +46,7 @@ Warden supports both **Central Cloud/HQ Deployments** and **Air-Gapped / Isolate
 # syntax=docker/dockerfile:1
 
 # Stage 1: Build Frontend Assets
-FROM node:20-alpine AS builder
+FROM node:24.22.2-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./

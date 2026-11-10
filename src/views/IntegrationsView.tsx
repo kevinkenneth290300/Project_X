@@ -67,7 +67,7 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-100 text-sm">{item.name}</h3>
-                    <span className="text-[10px] text-slate-400">{item.type}</span>
+                    <span className="text-[10px] text-slate-400">{item.category}</span>
                   </div>
                 </div>
                 <StatusBadge status="Unavailable" size="sm" showPulse={false} />
@@ -82,7 +82,7 @@ export const IntegrationsView: React.FC<IntegrationsViewProps> = ({ onNavigate }
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
                   <span className="text-slate-500">Payload Format:</span>
-                  <span className="text-slate-200">{item.format}</span>
+                  <span className="text-slate-400">Unavailable</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">Last Delivery:</span>

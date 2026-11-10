@@ -1,6 +1,6 @@
 # Warden — Production Deployment Guide
 
-This document provides detailed deployment architectures, containerization recipes, and security hardening procedures for running **Warden** in production enterprise environments.
+The current release is a demonstration console, not a production telemetry/security platform. [The root deployment guide](../DEPLOYMENT.md) is the canonical local build/preview procedure: pinned Node 24 LTS, `npm ci`, strict types, all tests, and a bundle build. Hosted CI: not run (owner decision). Record local platform results separately. The recipes below are unvalidated historical design sketches, not proof of implemented services, hardened containers, or enterprise readiness.
 
 ---
 
@@ -24,7 +24,7 @@ This document provides detailed deployment architectures, containerization recip
 
 ## 1. Deployment Architecture Overview
 
-Warden can be deployed under two standard operational models:
+The prototype implements static console output only. The following full-stack/production models require separate implementation and validation:
 
 | Model | Description | Best Suited For |
 | :--- | :--- | :--- |
@@ -41,7 +41,7 @@ To create an optimized, minified production distribution:
 npm run build
 ```
 
-This generates production-ready assets in the `dist/` directory:
+This generates production-optimized demonstration assets in the `dist/` directory, not a certified production platform:
 - Tree-shaken JavaScript bundles with content-hash filenames (e.g., `assets/index-C8x29a.js`)
 - Pre-compiled, scoped Tailwind CSS v4 stylesheets
 - Cache-busting static asset hashes
@@ -65,7 +65,7 @@ Create a `Dockerfile` in the root directory:
 # ==========================================
 # Stage 1: Build & Compile
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:24.22.2-alpine AS builder
 
 WORKDIR /app
 

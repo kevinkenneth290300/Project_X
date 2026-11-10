@@ -57,7 +57,7 @@ Warden Enterprise Master Console
 
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Launch development environment (Runs Vite dev server on port 3000)
 npm run dev
@@ -65,11 +65,19 @@ npm run dev
 # Run TypeScript check & linter
 npm run lint
 
+# Run unit and component/integration regressions
+npm test
+
 # Compile production bundle
 npm run build
+
+# Portable artifact cleanup (Windows and Linux)
+npm run clean
 ```
 
 ---
+
+Build/development uses Node 24 LTS pinned in [.node-version](.node-version). Run the locked installation, portable cleanup, strict TypeScript, tests, and production build locally. Native Linux execution is not implied by Windows results. Hosted CI: not run (owner decision). See [development](DEVELOPMENT.md) and [deployment limits](DEPLOYMENT.md).
 
 ## 📜 License
 

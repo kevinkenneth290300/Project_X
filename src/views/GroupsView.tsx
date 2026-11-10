@@ -50,7 +50,7 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onNavigate }) => {
         g.name.toLowerCase().includes(q) ||
         g.description.toLowerCase().includes(q) ||
         g.siteName.toLowerCase().includes(q) ||
-        g.zoneName.toLowerCase().includes(q)
+        (g.zoneName || '').toLowerCase().includes(q)
       );
     }
     return true;
@@ -86,7 +86,8 @@ export const GroupsView: React.FC<GroupsViewProps> = ({ onNavigate }) => {
     });
   };
 
-  const getCriticalityBadge = (crit: string) => {
+  const getCriticalityBadge = (crit?: string) => {
+    if (!crit) return <span className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400">Unknown</span>;
     switch (crit) {
       case 'Critical':
         return (

@@ -4,7 +4,7 @@ Tracking source: [epic #23](https://github.com/kevinkenneth290300/Project_X/issu
 
 ## Delivery rules
 
-Work only in Project_X. The separate collector is a read-only contract reference and must not be modified or released by this work. Keep a focused branch, conventional commit, regression tests, and a root-cause/change/validation document for each issue. Do not push directly to main or merge PRs automatically.
+Use a new isolated core-repository worktree per task; preserve the original and previously prepared worktrees and refs. The separate collector is a read-only contract reference and must not be modified or released by this work. Keep a focused branch, conventional commit, regression tests, and a root-cause/change/validation document for each issue. Do not push directly to main or merge PRs automatically.
 
 Priority order is P0 containment, prototype correctness and reproducible quality, authenticated telemetry, then offline/platform readiness. A prerequisite may be delivered first when needed to verify an otherwise higher-priority change. Large backend work is split into contract, identity, durable ingestion, authorized reads, and verified export increments, not one unreviewable rewrite.
 
@@ -23,7 +23,7 @@ Sequential PRs may depend on the preceding unmerged branch. Such PRs must state 
 | M0 | P0 | [#7](https://github.com/kevinkenneth290300/Project_X/issues/7) | No policy/profile deployment claims |
 | M0 | P0 | [#8](https://github.com/kevinkenneth290300/Project_X/issues/8) | No fabricated parser verification |
 | M1 - Prototype correctness and quality | P1 | [#9](https://github.com/kevinkenneth290300/Project_X/issues/9) | Authoritative site/zone relationships and missing-entity errors |
-| M1 | P1 | [#11](https://github.com/kevinkenneth290300/Project_X/issues/11) | Supported runtime, lockfile, portable scripts, strict types, tests, CI |
+| M1 | P1 | [#11](https://github.com/kevinkenneth290300/Project_X/issues/11) | [Local runtime, lockfile, portable scripts, strict types and tests](011-reproducible-quality-gates.md); hosted CI deferred |
 | M1 | P1 | [#12](https://github.com/kevinkenneth290300/Project_X/issues/12) | Restore the previous IR profile |
 | M1 | P1 | [#13](https://github.com/kevinkenneth290300/Project_X/issues/13) | Consistent site/zone display scope |
 | M1 | P1 | [#14](https://github.com/kevinkenneth290300/Project_X/issues/14) | Canonical asset/device models and safe filters |
@@ -41,4 +41,4 @@ Sequential PRs may depend on the preceding unmerged branch. Such PRs must state 
 
 Per-issue documents use `<issue-number>-<short-description>.md` in this directory. Record the actual test results, any baseline blockers, remaining limitations, and review/rollout expectations. Link the issue and epic in each document and PR. An issue is complete only after its acceptance criteria and required gates are satisfied and its reviewed PR is merged.
 
-Use unit checks for service semantics, component/integration checks for operator workflows, and real HTTP/storage/security tests for the future backend. Required gates are focused tests, full type checking, and a production build; CI must eventually verify a clean `npm ci` checkout on supported Windows and Linux runtimes. Never replace a failing gate with an ignore, invented status, or untested compatibility claim.
+Use unit checks for service semantics, component/integration checks for operator workflows, and real HTTP/storage/security tests for the future backend. Required local gates are a locked install when needed, focused/full tests, strict type checking, and a production build. Hosted CI: not run (owner decision); its #11 acceptance criterion remains deferred and open. Do not create, edit, trigger, or wait for workflows in this delivery phase. Never replace a failing local gate with an ignore, invented status, or untested compatibility claim.
